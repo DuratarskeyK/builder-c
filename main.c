@@ -9,7 +9,6 @@
 #include <curl/curl.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <pthread.h>
 #include <time.h>
 #include <mcheck.h>
 #include <errno.h>
@@ -70,27 +69,24 @@ int main() {
 	free(hostname);
 	free(json_hostname);
 
-	pid_t script_pid = exec_build(distrib_type, (const char **)env);
-
-	li_data *build_data = malloc(sizeof(li_data));
-	build_data->build_id = build_id;
-	build_data->pid = script_pid;
-	build_data->time_to_live = ttl;
-	pthread_t thread;
-	pthread_attr_t attr;
-
-	res = pthread_attr_init(&attr);
-
-	res = pthread_create(&thread, &attr, &live_inspector, build_data);
+	child script = exec_build(distrib_type, (const char **)env);
+	start_live_inspector(ttl, script.pid, build_id);
+	start_live_logger(build_id, script.read_fd);
 
 	int status, build_status;
-	waitpid(script_pid, &status, 0);
+	waitpid(script.pid, &status, 0);
+	stop_live_inspector();
+	stop_live_logger();
+
 	if(WIFEXITED(status)) {
 		build_status = WEXITSTATUS(status);
 	}
+	else if(WIFSIGNALED(status)) {
+		//this should never happen, except if something really bad happens
+		build_status = BUILD_FAILED;
+	}
 
-	pthread_cancel(thread);
-	free(build_data);
+	free(script.stack);
 
 	for(int i = 0; i < res; i++) {
 		free(env[i]);
@@ -168,27 +164,6 @@ int main() {
 
 	curl_global_cleanup();
 	return 0;
-}
-
-static void *live_inspector(void *arg) {
-	li_data *data = (li_data *)arg;
-	int t;
-
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &t);
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &t);
-
-	unsigned long endtime = (unsigned long)time(NULL) + data->time_to_live;
-
-	while(1) {
-		unsigned long curtime = (unsigned long)time(NULL);
-		int status = api_jobs_status(data->build_id);
-		if(status || curtime > endtime) {
-			kill(data->pid, SIGTERM);
-		}
-		sleep(10);
-	}
-
-	return NULL;
 }
 
 int process_config(char **abf_api_url, char **api_token, char **query_string) {

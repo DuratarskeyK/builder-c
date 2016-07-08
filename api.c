@@ -118,7 +118,7 @@ void api_set_api_url(const char *url) {
 	api_url = url;
 }
 
-int api_jobs_shift(char **buf) {
+/*int api_jobs_shift(char **buf) {
 	char *path;
 	if(api_url == NULL) {
 		return -1;
@@ -133,7 +133,7 @@ int api_jobs_shift(char **buf) {
 
 	free(path);
 	return 0;
-}
+}*/
 
 int api_jobs_status(const char *build_id) {
 	if(api_url == NULL) {
@@ -196,7 +196,7 @@ int api_jobs_feedback(const char *build_id, int status, const char *args) {
 	free(path);
 	return 0;
 }
-/*
+
 int api_jobs_shift(char **buf) {
 	FILE *a;
 	*buf = malloc(809);
@@ -205,4 +205,4 @@ int api_jobs_shift(char **buf) {
 	(*buf)[808] = '\0';
 	fclose(a);
 	return 0;
-}*/
+}

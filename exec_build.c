@@ -13,6 +13,8 @@
 #include "builder.h"
 
 static void term_handler(int signum) {
+	kill(-1, SIGTERM);
+	wait(NULL);
 	exit(BUILD_CANCELED);
 }
 
@@ -21,6 +23,7 @@ static int exec_init(void *arg) {
 
 	//remount proc and clear build dir
 	mount("", "/proc", "proc", MS_NOEXEC | MS_NOSUID | MS_NODEV, "");
+	system("rm -rf /home/omv/*");
 	pid_t pid = fork();
 
 	if(pid > 0) {
@@ -53,28 +56,34 @@ static int exec_init(void *arg) {
 		return build_status;
 	}
 	else {
-		setuid(1000);
 		setgid(1000);
-		const char *logfile_name = "/home/omv/script_output.log";
-		int fd = open(logfile_name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-		dup2(fd, 1);
-		dup2(fd, 2);
-		close(fd);
+		setuid(1000);
+		dup2(data->write_fd, 1);
+		dup2(data->write_fd, 2);
 		char *script_path = malloc(strlen(data->distrib_type) + strlen("//build-rpm.sh") + 1);
 		sprintf(script_path, "/%s/build-rpm.sh", data->distrib_type);
-		execle("/bin/bash", "bash", "-c", script_path, NULL, data->env);
+		execle("/bin/bash", "bash", "-lc", "--", script_path, NULL, data->env);
 	}
 
 	return 0;
 }
 
-pid_t exec_build(const char *distrib_type, const char **env) {
+child exec_build(const char *distrib_type, const char **env) {
 	pid_t pid;
 	char *stack = malloc(1048576);
+	int pfd[2];
+	child ret;
+	pipe(pfd);
+
 	exec_data *data = malloc(sizeof(exec_data));
 	data->distrib_type = distrib_type;
 	data->env = env;
+	data->write_fd = pfd[1];
 	pid = clone(exec_init, stack + 1048572, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
 
-	return pid;
+	ret.pid = pid;
+	ret.read_fd = pfd[0];
+	ret.stack = stack;
+
+	return ret;
 }
