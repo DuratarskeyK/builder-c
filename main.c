@@ -8,8 +8,6 @@
 #include <sys/wait.h>
 #include <curl/curl.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <time.h>
 #include <mcheck.h>
 #include <errno.h>
 #include "builder.h"
@@ -45,125 +43,129 @@ int main() {
 
 	api_set_token(api_token);
 	api_set_api_url(abf_api_url);
-	api_jobs_shift(&job);
 
-	char *build_id, *distrib_type;
-	int ttl;
+	while(1) {
+		api_jobs_shift(&job, query_string);
 
-	res = parse_job_description(job, &build_id, &ttl, &distrib_type, &env);
-	free(job);
-	switch(res) {
-		case -1:
-			printf("Received invalid json.\n");
-			return 5;
-		case -2:
-			printf("Job description doesn't contain actual job. Exiting.\n");
-			return 7;
+		char *build_id, *distrib_type;
+		int ttl;
+
+		res = parse_job_description(job, &build_id, &ttl, &distrib_type, &env);
+		free(job);
+		switch(res) {
+			case -1:
+				printf("Received invalid json.\n");
+				return 5;
+			case -2:
+				printf("Job description doesn't contain actual job. Exiting.\n");
+				return 7;
+		}
+
+		printf("Starting build with build_id %s\n", build_id);
+		char *hostname = malloc(1024), *json_hostname = malloc(1100);
+		gethostname(hostname, 1024);
+		sprintf(json_hostname, "{\"hostname\":\"%s\"}", hostname);
+		api_jobs_feedback(build_id, BUILD_STARTED, json_hostname);
+		free(hostname);
+		free(json_hostname);
+
+		child script = exec_build(distrib_type, (const char **)env);
+		start_live_inspector(ttl, script.pid, build_id);
+		start_live_logger(build_id, script.read_fd);
+
+		int status, build_status;
+		waitpid(script.pid, &status, 0);
+		stop_live_inspector();
+		stop_live_logger();
+
+		if(WIFEXITED(status)) {
+			build_status = WEXITSTATUS(status);
+		}
+		else if(WIFSIGNALED(status)) {
+			build_status = BUILD_FAILED;
+		}
+
+		free(script.stack);
+
+		for(int i = 0; i < res; i++) {
+			free(env[i]);
+		}
+		free(env);
+		free(distrib_type);
+
+		printf("Build is over with status %d\n", build_status);
+
+		char *filename = malloc(strlen(home_output) + strlen("/container_data.json") + 1), *container_data;
+		struct stat fileinfo;
+		sprintf(filename, "%s/container_data.json", home_output);
+		container_data = read_file(filename);
+		if(container_data != NULL) {
+			unlink(filename);
+		}
+		free(filename);
+
+		char *old_log_path = malloc(strlen(home_output) + strlen("/../script_output.log") + 1);
+		char *new_log_path = malloc(strlen(home_output) + strlen("/script_output.log") + 1);
+		sprintf(old_log_path, "%s/../script_output.log", home_output);
+		sprintf(new_log_path, "%s/script_output.log", home_output);
+		rename(old_log_path, new_log_path);
+		free(old_log_path);
+		free(new_log_path);
+
+		char *upload_cmd = malloc(strlen("/bin/bash filestore_upload.sh ") + strlen(home_output) + 22);
+		sprintf(upload_cmd, "/bin/bash filestore_upload.sh %s %s", api_token, home_output);
+		system(upload_cmd);
+		char *results = read_file("/tmp/results.json");
+		if(results != NULL) {
+			unlink("/tmp/results.json");
+		}
+		free(upload_cmd);
+
+		filename = malloc(strlen(home_output) + strlen("/../commit_hash") + 1);
+		sprintf(filename, "%s/../commit_hash", home_output);
+		char *commit_hash = read_file(filename);
+		if(commit_hash != NULL) {
+			unlink(filename);
+		}
+		free(filename);
+
+		char *args = malloc((container_data ? strlen(container_data) : 0) + (results ? strlen(results) : 0) + 2048);
+		sprintf(args, "{\"results\":%s,\"packages\":%s,\"exit_status\":%d,\"commit_hash\":\"%s\"}", (results ? results : "{}"), \
+				(container_data ? container_data : "{}"), status, (commit_hash ? commit_hash : ""));
+		api_jobs_feedback(build_id, build_status, args);
+		free(args);
+		free(build_id);
+
+		if(commit_hash) {
+			free(commit_hash);
+		}
+		if(results) {
+			free(results);
+		}
+		if(container_data) {
+			free(container_data);
+		}
 	}
 
-	printf("Starting build with build_id %s\n", build_id);
-	char *hostname = malloc(1024), *json_hostname = malloc(1100);
-	gethostname(hostname, 1024);
-	sprintf(json_hostname, "{\"hostname\":\"%s\"}", hostname);
-	api_jobs_feedback(build_id, BUILD_STARTED, json_hostname);
-	free(hostname);
-	free(json_hostname);
-
-	child script = exec_build(distrib_type, (const char **)env);
-	start_live_inspector(ttl, script.pid, build_id);
-	start_live_logger(build_id, script.read_fd);
-
-	int status, build_status;
-	waitpid(script.pid, &status, 0);
-	stop_live_inspector();
-	stop_live_logger();
-
-	if(WIFEXITED(status)) {
-		build_status = WEXITSTATUS(status);
-	}
-	else if(WIFSIGNALED(status)) {
-		//this should never happen, except if something really bad happens
-		build_status = BUILD_FAILED;
-	}
-
-	free(script.stack);
-
-	for(int i = 0; i < res; i++) {
-		free(env[i]);
-	}
-	free(env);
-	free(distrib_type);
-
-	printf("Build is over with status %d\n", build_status);
-
-	char *filename = malloc(strlen(home_output) + strlen("/container_data.json") + 1), *container_data = NULL;
-	struct stat fileinfo;
-	sprintf(filename, "%s/container_data.json", home_output);
-	FILE *fn = fopen(filename, "r");
-
-	if(fn != NULL && !fstat(fileno(fn), &fileinfo)) {
-		container_data = malloc(fileinfo.st_size + 1);
-		fread(container_data, fileinfo.st_size, 1, fn);
-		container_data[fileinfo.st_size] = '\0';
-		fclose(fn);
-		unlink(filename);
-	}
-	free(filename);
-
-	char *old_log_path = malloc(strlen(home_output) + strlen("/../script_output.log") + 1);
-	char *new_log_path = malloc(strlen(home_output) + strlen("/script_output.log") + 1);
-	sprintf(old_log_path, "%s/../script_output.log", home_output);
-	sprintf(new_log_path, "%s/script_output.log", home_output);
-	rename(old_log_path, new_log_path);
-	free(old_log_path);
-	free(new_log_path);
-
-	char *upload_cmd = malloc(strlen("/bin/bash filestore_upload.sh ") + strlen(home_output) + 22);
-	sprintf(upload_cmd, "/bin/bash filestore_upload.sh %s %s", api_token, home_output);
-	system(upload_cmd);
-	FILE *results_json = fopen("/tmp/results.json", "r");
-	char *results = NULL;
-	if(results_json != NULL && !fstat(fileno(results_json), &fileinfo)) {
-		results = malloc(fileinfo.st_size + 1);
-		fread(results, fileinfo.st_size, 1, results_json);
-		results[fileinfo.st_size] = '\0';
-		fclose(results_json);
-		unlink("/tmp/results.json");
-	}
-	free(upload_cmd);
-
-	filename = malloc(strlen(home_output) + strlen("/../commit_hash") + 1);
-	sprintf(filename, "%s/../commit_hash", home_output);
-	FILE *commit_hash_file = fopen(filename, "r");
-	char *commit_hash = NULL;
-	if(commit_hash_file != NULL) {
-		commit_hash = malloc(41);
-		fread(commit_hash, 40, 1, commit_hash_file);
-		commit_hash[40] = '\0';
-		fclose(commit_hash_file);
-		unlink(filename);
-	}
-	free(filename);
-
-	char *args = malloc((container_data ? strlen(container_data) : 0) + (results ? strlen(results) : 0) + 2048);
-	sprintf(args, "{\"results\":%s,\"packages\":%s,\"exit_status\":%d,\"commit_hash\":\"%s\"}", (results ? results : "{}"), \
-			(container_data ? container_data : "{}"), status, (commit_hash ? commit_hash : ""));
-	api_jobs_feedback(build_id, build_status, args);
-	free(args);
-	free(build_id);
-
-	if(commit_hash) {
-		free(commit_hash);
-	}
-	if(results) {
-		free(results);
-	}
-	if(container_data) {
-		free(container_data);
-	}
 
 	curl_global_cleanup();
 	return 0;
+}
+
+char *read_file(const char *path) {
+	FILE *fn = fopen(path, "r");
+	struct stat fileinfo;
+
+	if(fn != NULL && !fstat(fileno(fn), &fileinfo)) {
+		char *res = malloc(fileinfo.st_size + 1);
+		fread(res, fileinfo.st_size, 1, fn);
+		res[fileinfo.st_size] = '\0';
+		fclose(fn);
+		return res;
+	} 
+	else {
+		return NULL;
+	}
 }
 
 int process_config(char **abf_api_url, char **api_token, char **query_string) {

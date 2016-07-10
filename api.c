@@ -48,6 +48,7 @@ static int curl_get(const char *url, char **buf) {
 
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)tmpf);
+	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 	if(token != NULL) {
 		curl_easy_setopt(curl_handle, CURLOPT_USERNAME, token);
@@ -93,6 +94,7 @@ static int curl_put(const char *url, const char *buf) {
  	curl_easy_setopt(curl, CURLOPT_URL, url);
  	curl_easy_setopt(curl, CURLOPT_READDATA, &mem);
  	curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+ 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
  	curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)strlen(buf));
  	if(token != NULL) {
 		curl_easy_setopt(curl, CURLOPT_USERNAME, token);
@@ -118,7 +120,7 @@ void api_set_api_url(const char *url) {
 	api_url = url;
 }
 
-/*int api_jobs_shift(char **buf) {
+int api_jobs_shift(char **buf, const char *query_string) {
 	char *path;
 	if(api_url == NULL) {
 		return -1;
@@ -133,7 +135,7 @@ void api_set_api_url(const char *url) {
 
 	free(path);
 	return 0;
-}*/
+}
 
 int api_jobs_status(const char *build_id) {
 	if(api_url == NULL) {
@@ -197,7 +199,47 @@ int api_jobs_feedback(const char *build_id, int status, const char *args) {
 	return 0;
 }
 
-int api_jobs_shift(char **buf) {
+int api_jobs_logs(const char *key, const char *buf) {
+	char *path;
+
+	if(api_url == NULL) {
+		return -1;
+	}
+
+	path = malloc(strlen(api_url) + strlen(API_JOBS_LOGS) + 1);
+	sprintf(path, "%s%s", api_url, API_JOBS_LOGS);
+
+	int len = strlen(buf), i;
+	char *escaped_buf = malloc(len * 2);
+	char *p = escaped_buf;
+
+	for(i = 0; i<len; i++) {
+		char c = buf[i];
+		switch(c) {
+			case '"': p += sprintf(p, "\\\""); break;
+			case '\\': p += sprintf(p, "\\\\"); break;
+			case '\b': p += sprintf(p, "\\b"); break;
+			case '\f': p += sprintf(p, "\\f"); break;
+			case '\n': p += sprintf(p, "\\n"); break;
+			case '\r': p += sprintf(p, "\\r"); break;
+			case '\t': p += sprintf(p, "\\t"); break;
+			default: *(p++) = c; break;
+		}
+	}
+	*p = '\0';
+
+	char *payload = malloc(strlen(escaped_buf) + strlen(API_LOGS_PAYLOAD) + strlen(key) + 1);
+	sprintf(payload, API_LOGS_PAYLOAD, key, escaped_buf);
+	free(escaped_buf);
+
+	curl_put(path, payload);
+	free(payload);
+	free(path);
+
+	return 0;
+}
+
+/*int api_jobs_shift(char **buf) {
 	FILE *a;
 	*buf = malloc(809);
 	a = fopen("test.api", "r");
@@ -205,4 +247,4 @@ int api_jobs_shift(char **buf) {
 	(*buf)[808] = '\0';
 	fclose(a);
 	return 0;
-}
+}*/

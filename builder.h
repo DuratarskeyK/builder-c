@@ -11,6 +11,7 @@
 	//main.c
 	#define COMPARE(var, str, len) (strlen(str) == (len) && !strncmp(var, str, len))
 
+	char *read_file(const char *);
 	int process_config(char **, char **, char **);
 	int load_scripts(const char *, const char *, const char *);
 	char *create_output_directory();
@@ -40,11 +41,14 @@
 	#define API_JOBS_SHIFT "/jobs/shift"
 	#define API_JOBS_FEEDBACK "/jobs/feedback"
 	#define API_JOBS_STATUS "/jobs/status"
+	#define API_JOBS_LOGS "/jobs/logs"
+	#define API_LOGS_PAYLOAD "{\"name\":\"%s\",\"logs\":\"%s\"}"
 	#define API_STATUS_QUERYSTRING "?key=abfworker::rpm-worker-%s::live-inspector"
 	static int curl_get(const char *, char **);
 	static int curl_put(const char *, const char *);
 	void api_set_token(const char *);
 	void api_set_api_url(const char *);
+	int api_jobs_logs(const char *, const char *);
 	int api_jobs_shift(char **);
 	int api_jobs_feedback(const char *, int, const char *);
 	int api_jobs_status(const char *);

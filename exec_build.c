@@ -60,6 +60,7 @@ static int exec_init(void *arg) {
 		setuid(1000);
 		dup2(data->write_fd, 1);
 		dup2(data->write_fd, 2);
+		close(data->write_fd);
 		char *script_path = malloc(strlen(data->distrib_type) + strlen("//build-rpm.sh") + 1);
 		sprintf(script_path, "/%s/build-rpm.sh", data->distrib_type);
 		execle("/bin/bash", "bash", "-lc", "--", script_path, NULL, data->env);
@@ -79,8 +80,9 @@ child exec_build(const char *distrib_type, const char **env) {
 	data->distrib_type = distrib_type;
 	data->env = env;
 	data->write_fd = pfd[1];
-	pid = clone(exec_init, stack + 1048572, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
+	pid = clone(exec_init, stack + 1048571, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
 
+	free(data);
 	ret.pid = pid;
 	ret.read_fd = pfd[0];
 	ret.stack = stack;

@@ -8,29 +8,30 @@
 
 static pthread_t buffer_dump_thread, read_log_thread;
 static char *key, *buf;
-static int cur_pos = 0;
+static int cur_pos = 0, fd;
 static pthread_mutex_t buf_access;
 
 static void *buffer_dump(void *arg) {
 	while(1) {
 		pthread_mutex_lock(&buf_access);
-		printf("%s\n", buf);
-		sleep(5);
+		int i = 0;
+		while(buf[i++] != '\n');
+		api_jobs_logs(key, buf + i);
 		pthread_mutex_unlock(&buf_access);
+		sleep(10);
 	}
 }
 
-static void *read_log(void *fd) {
-	int read_fd = *(int *)fd, len, d;
+static void *read_log(void *arg) {
+	int len, d;
 	char str[1025];
-	str[1024] = '\0';
 
-	while((len = read(read_fd, &str, 1024)) > 0) {
+	while((len = read(fd, str, 1024)) > 0) {
+		str[len] = 0;
 		pthread_mutex_lock(&buf_access);
-		printf("abc\n", str);
-		if(30000-cur_pos < len) {
-			d = len - (30000 - cur_pos);
-			memmove(buf, buf + d, d);
+		if(3000 - cur_pos < len) {
+			d = len - (3000 - cur_pos);
+			memmove(buf, buf + d, 3000 - d);
 			cur_pos -= d;
 		}
 		cur_pos += sprintf(buf + cur_pos, "%s", str);
@@ -48,11 +49,15 @@ int start_live_logger(const char *build_id, int read_fd) {
 	if(res != 0) {
 		return -1;
 	}
+	//res = pthread_attr_setstacksize(&attr, 1<<10);
 
 	pthread_mutex_init(&buf_access, NULL);
 
 	key = malloc(strlen(build_id) + strlen("abfworker::rpm-worker-") + 1);
-	buf = malloc(30001);
+	buf = malloc(3001);
+	memset(buf, 0, 3001);
+	cur_pos += sprintf(buf, "\nStarting build...\n");
+
 	sprintf(key, "abfworker::rpm-worker-%s", build_id);
 
 	res = pthread_create(&buffer_dump_thread, &attr, &buffer_dump, NULL);
@@ -61,7 +66,8 @@ int start_live_logger(const char *build_id, int read_fd) {
 		return -1;
 	}
 
-	res = pthread_create(&read_log_thread, &attr, &read_log, &read_fd);
+	fd = read_fd;
+	res = pthread_create(&read_log_thread, &attr, &read_log, NULL);
 
 	if(res != 0) {
 		return -1;
@@ -78,4 +84,5 @@ void stop_live_logger() {
 	pthread_cancel(read_log_thread);
 	free(key);
 	free(buf);
+	close(fd);
 }
