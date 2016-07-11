@@ -38,7 +38,7 @@ static int exec_init(void *arg) {
 
 		sigaction(SIGTERM, &sig, NULL);
 
-		wait(&status);
+		waitpid(pid, &status, 0);
 
 		if(WIFEXITED(status)) {
 			status = WEXITSTATUS(status);
