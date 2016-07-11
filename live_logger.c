@@ -76,6 +76,10 @@ int start_live_logger(const char *build_id, int read_fd) {
 	res = pthread_create(&buffer_dump_thread, &attr, &buffer_dump, NULL);
 
 	if(res != 0) {
+		free(key);
+		free(buf);
+		pthread_mutex_destroy(&buf_access);
+		pthread_attr_destroy(&attr);
 		return -1;
 	}
 
@@ -84,6 +88,11 @@ int start_live_logger(const char *build_id, int read_fd) {
 	res = pthread_create(&read_log_thread, &attr, &read_log, NULL);
 
 	if(res != 0) {
+		free(key);
+		free(buf);
+		pthread_mutex_destroy(&buf_access);
+		pthread_attr_destroy(&attr);
+		pthread_cancel(buffer_dump_thread);
 		return -1;
 	}
 

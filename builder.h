@@ -1,5 +1,7 @@
 #ifndef _BUILDER_H
 #define _BUILDER_H
+	//for pid_t
+	#include <unistd.h>
 
 	#define BUILD_COMPLETED 0
 	#define BUILD_FAILED    1
@@ -17,6 +19,10 @@
 	char *create_output_directory();
 	int parse_job_description(const char *, char **, int *, char **, char ***);
 	char *make_env(const char *, const char *);
+
+	//statistics.h
+	static char char2hex(unsigned char);
+	int start_statistics_thread();
 
 	//live_logger.c
 	static void *buffer_dump(void *);
@@ -42,8 +48,10 @@
 	#define API_JOBS_FEEDBACK "/jobs/feedback"
 	#define API_JOBS_STATUS "/jobs/status"
 	#define API_JOBS_LOGS "/jobs/logs"
+	#define API_JOBS_STATISTICS "/jobs/statistics"
 	#define API_LOGS_PAYLOAD "{\"name\":\"%s\",\"logs\":\"%s\"}"
 	#define API_STATUS_QUERYSTRING "?key=abfworker::rpm-worker-%s::live-inspector"
+	#define API_STATISTICS_PAYLOAD ""
 	static int curl_get(const char *, char **);
 	static int curl_put(const char *, const char *);
 	void api_set_token(const char *);

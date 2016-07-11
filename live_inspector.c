@@ -45,6 +45,7 @@ int start_live_inspector(int ttl, pid_t pid, const char *bid) {
 	res = pthread_create(&li_thread, &attr, &live_inspector, data);
 
 	if(res != 0) {
+		pthread_attr_destroy(&attr);
 		return -1;
 	}
 

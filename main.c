@@ -1,27 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <libconfig.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <curl/curl.h>
 #include <unistd.h>
-#include <mcheck.h>
-#include <errno.h>
 #include "builder.h"
 #include "jsmn.h"
 
 int main() {
-	mtrace();
-
 	char *home_output = NULL;
 	home_output = create_output_directory();
 
 	int res, start, len;
 	char *query_string, *abf_api_url, *api_token, *job;
 	char **env;
+	char hostname[128], hostname_payload[156];
+	memset(hostname, 0, 128);
+	gethostname(hostname, 128);
+	sprintf(hostname_payload, "{\"hostname\":\"%s\"}", hostname);
 
 	curl_global_init(CURL_GLOBAL_ALL);
 
@@ -44,6 +43,9 @@ int main() {
 	api_set_token(api_token);
 	api_set_api_url(abf_api_url);
 
+	//start_statistics_thread();
+
+	//exit(0);
 	while(1) {
 		if(api_jobs_shift(&job, query_string)) {
 			//getting a job failed
@@ -63,16 +65,18 @@ int main() {
 		}
 
 		printf("Starting build with build_id %s\n", build_id);
-		char *hostname = malloc(1024), *json_hostname = malloc(1100);
-		gethostname(hostname, 1024);
-		sprintf(json_hostname, "{\"hostname\":\"%s\"}", hostname);
-		api_jobs_feedback(build_id, BUILD_STARTED, json_hostname);
-		free(hostname);
-		free(json_hostname);
+		int retries = 5;
+		while(api_jobs_feedback(build_id, BUILD_STARTED, hostname_payload) && retries) {
+			retries--;
+		}
 
 		child script = exec_build(distrib_type, (const char **)env);
-		start_live_inspector(ttl, script.pid, build_id);
-		start_live_logger(build_id, script.read_fd);
+		if(start_live_inspector(ttl, script.pid, build_id) < 0) {
+			printf("Live inspector failed to start. Job canceling and timeout is unavailable.\n");
+		}
+		if(start_live_logger(build_id, script.read_fd) < 0) {
+			printf("Live logger failed to start. Live log will be unavailable.\n");
+		}
 
 		int status, build_status;
 		waitpid(script.pid, &status, 0);
@@ -132,7 +136,12 @@ int main() {
 		char *args = malloc((container_data ? strlen(container_data) : 0) + (results ? strlen(results) : 0) + 2048);
 		sprintf(args, "{\"results\":%s,\"packages\":%s,\"exit_status\":%d,\"commit_hash\":\"%s\"}", (results ? results : "{}"), \
 				(container_data ? container_data : "{}"), status, (commit_hash ? commit_hash : ""));
-		api_jobs_feedback(build_id, build_status, args);
+
+		retries = 5;
+		while(api_jobs_feedback(build_id, build_status, args) && retries) {
+			retries--;
+		}
+
 		free(args);
 		free(build_id);
 

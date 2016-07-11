@@ -155,7 +155,9 @@ int api_jobs_status(const char *build_id) {
 
 	char *ret;
 
-	curl_get(path, &ret);
+	if(curl_get(path, &ret)) {
+		return 0;
+	}
 
 	int f;
 	if(strstr(ret, "USR1")) {
