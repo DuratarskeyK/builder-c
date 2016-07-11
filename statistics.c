@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include "builder.h"
 
 static char *uid;
@@ -21,8 +22,6 @@ static char char2hex(unsigned char c) {
 		return '0';
 	}
 }
-
-int
 
 int start_statistics_thread() {
 	unsigned char random_data[16];
