@@ -24,9 +24,15 @@ then
 fi
 
 echo -n '[' > /tmp/results.json
+
 start=0
 for file in ${2}/*
 do
+	if [ "$file" = "${2}/*" ]
+	then
+		break
+	fi
+
 	if [ $start -eq 1 ] && [[ "$file" != *.rpm ]]
 	then
 		echo -n ',' >> /tmp/results.json

@@ -23,7 +23,7 @@ static int exec_init(void *arg) {
 
 	//remount proc and clear build dir
 	mount("", "/proc", "proc", MS_NOEXEC | MS_NOSUID | MS_NODEV, "");
-	system("rm -rf /home/omv/*");
+	system("rm -rf /home/omv/output/*");
 	pid_t pid = fork();
 
 	if(pid > 0) {
@@ -83,6 +83,7 @@ child exec_build(const char *distrib_type, const char **env) {
 	pid = clone(exec_init, stack + 1048571, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
 
 	free(data);
+	close(pfd[1]);
 	ret.pid = pid;
 	ret.read_fd = pfd[0];
 	ret.stack = stack;

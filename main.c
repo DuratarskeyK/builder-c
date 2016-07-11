@@ -45,20 +45,21 @@ int main() {
 	api_set_api_url(abf_api_url);
 
 	while(1) {
-		api_jobs_shift(&job, query_string);
+		if(api_jobs_shift(&job, query_string)) {
+			//getting a job failed
+			sleep(10);
+			continue;
+		}
 
 		char *build_id, *distrib_type;
 		int ttl;
 
 		res = parse_job_description(job, &build_id, &ttl, &distrib_type, &env);
 		free(job);
-		switch(res) {
-			case -1:
-				printf("Received invalid json.\n");
-				return 5;
-			case -2:
-				printf("Job description doesn't contain actual job. Exiting.\n");
-				return 7;
+		//either json is invalid or no job
+		if(res < 0) {
+			sleep(10);
+			continue;
 		}
 
 		printf("Starting build with build_id %s\n", build_id);
@@ -104,12 +105,10 @@ int main() {
 		}
 		free(filename);
 
-		char *old_log_path = malloc(strlen(home_output) + strlen("/../script_output.log") + 1);
+		mkdir(home_output, 0666);
 		char *new_log_path = malloc(strlen(home_output) + strlen("/script_output.log") + 1);
-		sprintf(old_log_path, "%s/../script_output.log", home_output);
 		sprintf(new_log_path, "%s/script_output.log", home_output);
-		rename(old_log_path, new_log_path);
-		free(old_log_path);
+		rename("/tmp/script_output.log", new_log_path);
 		free(new_log_path);
 
 		char *upload_cmd = malloc(strlen("/bin/bash filestore_upload.sh ") + strlen(home_output) + 22);
@@ -125,6 +124,7 @@ int main() {
 		sprintf(filename, "%s/../commit_hash", home_output);
 		char *commit_hash = read_file(filename);
 		if(commit_hash != NULL) {
+			commit_hash[40] = '\0';
 			unlink(filename);
 		}
 		free(filename);
@@ -146,7 +146,6 @@ int main() {
 			free(container_data);
 		}
 	}
-
 
 	curl_global_cleanup();
 	return 0;
@@ -186,6 +185,8 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 	}
 	fclose(config_file);
 
+	printf("Config parsed successfuly.\n");
+
 	const char *tmp, *arches, *native_arches, *platforms;
 
 	int req_res;
@@ -193,17 +194,43 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 	if(!req_res) {
 		return 3;
 	}
+	printf("Found api base url: %s\n", tmp);
 	*abf_api_url = strdup(tmp);
 	req_res = config_lookup_string(&config, "application.abf.token", &tmp);
 	if(!req_res) {
-		return 4;
+		tmp = getenv("BUILD_TOKEN");
+		if(tmp == NULL) {
+			return 4;
+		}
 	}
+	printf("Found build token: %s\n", tmp);
 	*api_token = strdup(tmp);
 
 	int p1, p2, p3;
 	p1 = config_lookup_string(&config, "application.abf.supported_arches", &arches);
+	if(!p1) {
+		tmp = getenv("BUILD_ARCH");
+		if(tmp != NULL) {
+			arches = strdup(tmp);
+			p1 = 1;
+		}
+	}
 	p2 = config_lookup_string(&config, "application.abf.native_arches", &native_arches);
+	if(!p2) {
+		tmp = getenv("NATIVE_ARCH");
+		if(tmp != NULL) {
+			native_arches = strdup(tmp);
+			p2 = 1;
+		}
+	}
 	p3 = config_lookup_string(&config, "application.abf.supported_platforms", &platforms);
+	if(!p3) {
+		tmp = getenv("BUILD_PLATFORM");
+		if(tmp != NULL) {
+			platforms = strdup(tmp);
+			p3 = 1;
+		}
+	}
 	len = (p1 ? strlen(arches) : 0) + (p2 ? strlen(native_arches) : 0) + (p3 ? strlen(platforms) : 0);
 	if(len) {
 		char *pointer;
@@ -211,12 +238,15 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 		pointer = *query_string;
 		if(p1) {
 			pointer += sprintf(pointer, "arches=%s&", arches);
+			printf("Found supported arches: %s\n", arches);
 		}
 		if(p2) {
 			pointer += sprintf(pointer, "native_arches=%s&", native_arches);
+			printf("Found native arches: %s\n", native_arches);
 		}
 		if(p3) {
 			pointer += sprintf(pointer, "platforms=%s", platforms);
+			printf("Found supported platforms: %s\n", platforms);
 		}
 
 		pointer-=1;

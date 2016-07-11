@@ -49,7 +49,7 @@
 	void api_set_token(const char *);
 	void api_set_api_url(const char *);
 	int api_jobs_logs(const char *, const char *);
-	int api_jobs_shift(char **);
+	int api_jobs_shift(char **, const char *);
 	int api_jobs_feedback(const char *, int, const char *);
 	int api_jobs_status(const char *);
 	//exec_build.c

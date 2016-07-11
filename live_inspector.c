@@ -55,5 +55,6 @@ int start_live_inspector(int ttl, pid_t pid, const char *bid) {
 
 void stop_live_inspector() {
 	pthread_cancel(li_thread);
+	pthread_join(li_thread, NULL);
 	free(data);
 }

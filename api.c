@@ -126,8 +126,15 @@ int api_jobs_shift(char **buf, const char *query_string) {
 		return -1;
 	}
 
-	path = malloc(strlen(api_url) + 12);
-	sprintf(path, "%s%s", api_url, API_JOBS_SHIFT);
+	if(query_string != NULL) {
+		path = malloc(strlen(api_url) + strlen(API_JOBS_SHIFT) + strlen(query_string) + 2);
+		sprintf(path, "%s%s?%s", api_url, API_JOBS_SHIFT, query_string);
+	}
+	else {
+		path = malloc(strlen(api_url) + strlen(API_JOBS_SHIFT) + 1);
+		sprintf(path, "%s%s", api_url, API_JOBS_SHIFT);
+	}
+
 	if(curl_get(path, buf)) {
 		free(path);
 		return 1;
@@ -188,13 +195,10 @@ int api_jobs_feedback(const char *build_id, int status, const char *args) {
 			free(final_args);
 			//printf("%s\n", final_send);
 			curl_put(path, final_send);
+			free(final_send);
 		}
 	}
-	else {
-		
-	}
 
-	free(final_send);
 	free(path);
 	return 0;
 }
