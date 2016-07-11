@@ -21,8 +21,10 @@
 	char *make_env(const char *, const char *);
 
 	//statistics.h
+	static void *statistics(void *);
 	static char char2hex(unsigned char);
-	int start_statistics_thread();
+	void set_busy_status(int s);
+	int start_statistics_thread(const char *);
 
 	//live_logger.c
 	static void *buffer_dump(void *);
@@ -51,11 +53,12 @@
 	#define API_JOBS_STATISTICS "/jobs/statistics"
 	#define API_LOGS_PAYLOAD "{\"name\":\"%s\",\"logs\":\"%s\"}"
 	#define API_STATUS_QUERYSTRING "?key=abfworker::rpm-worker-%s::live-inspector"
-	#define API_STATISTICS_PAYLOAD ""
+	#define API_STATISTICS_PAYLOAD "{\"uid\":\"%s\",\"worker_count\":1,\"busy_workers\":%d,\"host\":\"%s\",\"query_string\":\"%s\"}"
 	static int curl_get(const char *, char **);
 	static int curl_put(const char *, const char *);
 	void api_set_token(const char *);
 	void api_set_api_url(const char *);
+	int api_job_statistics(const char *);
 	int api_jobs_logs(const char *, const char *);
 	int api_jobs_shift(char **, const char *);
 	int api_jobs_feedback(const char *, int, const char *);

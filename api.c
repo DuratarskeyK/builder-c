@@ -120,6 +120,25 @@ void api_set_api_url(const char *url) {
 	api_url = url;
 }
 
+int api_job_statistics(const char *payload) {
+	char *path;
+	if(api_url == NULL) {
+		return -1;
+	}
+
+	path = malloc(strlen(api_url) + strlen(API_JOBS_STATISTICS) + 1);
+	sprintf(path, "%s%s", api_url, API_JOBS_STATISTICS);
+
+	if(curl_put(path, payload)) {
+		free(path);
+		return -1;
+	}
+
+	free(path);
+
+	return 0;
+}
+
 int api_jobs_shift(char **buf, const char *query_string) {
 	char *path;
 	if(api_url == NULL) {
@@ -137,7 +156,7 @@ int api_jobs_shift(char **buf, const char *query_string) {
 
 	if(curl_get(path, buf)) {
 		free(path);
-		return 1;
+		return -1;
 	}
 
 	free(path);

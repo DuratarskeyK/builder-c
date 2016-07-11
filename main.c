@@ -43,9 +43,8 @@ int main() {
 	api_set_token(api_token);
 	api_set_api_url(abf_api_url);
 
-	//start_statistics_thread();
+	start_statistics_thread(query_string);
 
-	//exit(0);
 	while(1) {
 		if(api_jobs_shift(&job, query_string)) {
 			//getting a job failed
@@ -66,6 +65,7 @@ int main() {
 
 		printf("Starting build with build_id %s\n", build_id);
 		int retries = 5;
+		set_busy_status(1);
 		while(api_jobs_feedback(build_id, BUILD_STARTED, hostname_payload) && retries) {
 			retries--;
 		}
@@ -142,6 +142,7 @@ int main() {
 			retries--;
 		}
 
+		set_busy_status(0);
 		free(args);
 		free(build_id);
 
