@@ -115,7 +115,7 @@ int main() {
 		rename("/tmp/script_output.log", new_log_path);
 		free(new_log_path);
 
-		char *upload_cmd = malloc(strlen("/bin/bash filestore_upload.sh ") + strlen(home_output) + 22);
+		char *upload_cmd = malloc(strlen("/bin/bash /etc/builder-c/filestore_upload.sh ") + strlen(home_output) + 22);
 		sprintf(upload_cmd, "/bin/bash /etc/builder-c/filestore_upload.sh %s %s", api_token, home_output);
 		system(upload_cmd);
 		char *results = read_file("/tmp/results.json");
