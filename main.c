@@ -116,7 +116,7 @@ int main() {
 		free(new_log_path);
 
 		char *upload_cmd = malloc(strlen("/bin/bash filestore_upload.sh ") + strlen(home_output) + 22);
-		sprintf(upload_cmd, "/bin/bash filestore_upload.sh %s %s", api_token, home_output);
+		sprintf(upload_cmd, "/bin/bash /etc/builder-c/filestore_upload.sh %s %s", api_token, home_output);
 		system(upload_cmd);
 		char *results = read_file("/tmp/results.json");
 		if(results != NULL) {
@@ -185,7 +185,7 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 	char *config_path;
 	int len;
 
-	config_file = fopen("builder.conf", "r");
+	config_file = fopen("/etc/builder-c/builder.conf", "r");
 	if(config_file == NULL) {
 		return 1;
 	}
