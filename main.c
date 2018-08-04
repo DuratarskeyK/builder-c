@@ -137,6 +137,7 @@ int main() {
 		sprintf(args, "{\"results\":%s,\"packages\":%s,\"exit_status\":%d,\"commit_hash\":\"%s\"}", (results ? results : "{}"), \
 				(container_data ? container_data : "{}"), status, (commit_hash ? commit_hash : ""));
 
+		printf("%s\n", args);
 		retries = 5;
 		while(api_jobs_feedback(build_id, build_status, args) && retries) {
 			retries--;
