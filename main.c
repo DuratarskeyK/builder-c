@@ -7,6 +7,8 @@
 #include <sys/wait.h>
 #include <curl/curl.h>
 #include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
 #include "builder.h"
 #include "jsmn.h"
 
@@ -18,6 +20,17 @@ int main() {
 	char *query_string, *abf_api_url, *api_token, *job;
 	char **env;
 	char hostname[128], hostname_payload[156];
+
+	usergroup omv_mock = get_omv_uid_mock_gid();
+	if(omv_mock.omv_uid == 0) {
+		printf("User omv doesn't exist.\n");
+		return 0;
+	}
+	if(omv_mock.mock_gid == 0) {
+		printf("Group mock doesn't exist.\n");
+		return 0;
+	}
+
 	memset(hostname, 0, 128);
 	gethostname(hostname, 128);
 	sprintf(hostname_payload, "{\"hostname\":\"%s\"}", hostname);
@@ -43,7 +56,9 @@ int main() {
 	api_set_token(api_token);
 	api_set_api_url(abf_api_url);
 
-	start_statistics_thread(query_string);
+	if(start_statistics_thread(query_string)) {
+		printf("Failed to initialize statistics thread. Moving on without it.\n");
+	}
 
 	while(1) {
 		if(api_jobs_shift(&job, query_string)) {
@@ -70,7 +85,7 @@ int main() {
 			retries--;
 		}
 
-		child script = exec_build(distrib_type, (const char **)env);
+		child script = exec_build(distrib_type, (const char **)env, omv_mock);
 		if(start_live_inspector(ttl, script.pid, build_id) < 0) {
 			printf("Live inspector failed to start. Job canceling and timeout is unavailable.\n");
 		}
@@ -162,6 +177,24 @@ int main() {
 	return 0;
 }
 
+usergroup get_omv_uid_mock_gid() {
+	usergroup ret;
+	ret.omv_uid = ret.mock_gid = 0;
+
+	struct passwd *omv = getpwnam("omv");
+	if(omv == NULL) {
+		return ret;
+	}
+	ret.omv_uid = omv->pw_uid;
+	struct group *mock = getgrnam("mock");
+	if(mock == NULL) {
+		return ret;
+	}
+	ret.mock_gid = mock->gr_gid;
+
+	return ret;
+}
+
 char *read_file(const char *path) {
 	FILE *fn = fopen(path, "r");
 	struct stat fileinfo;
@@ -172,7 +205,7 @@ char *read_file(const char *path) {
 		res[fileinfo.st_size] = '\0';
 		fclose(fn);
 		return res;
-	} 
+	}
 	else {
 		return NULL;
 	}

@@ -13,6 +13,19 @@
 	//main.c
 	#define COMPARE(var, str, len) (strlen(str) == (len) && !strncmp(var, str, len))
 
+	//data to pass to live inspector thread
+	typedef struct {
+		int time_to_live;
+		pid_t pid;
+		const char *build_id;
+	} li_data;
+
+	typedef struct {
+		uid_t omv_uid;
+		gid_t mock_gid;
+	} usergroup;
+
+	usergroup get_omv_uid_mock_gid();
 	char *read_file(const char *);
 	int process_config(char **, char **, char **);
 	int load_scripts(const char *, const char *, const char *);
@@ -36,12 +49,6 @@
 	static void *live_inspector(void *);
 	int start_live_inspector(int, pid_t, const char *);
 	void stop_live_inspector();
-	//data to pass to live inspector thread
-	typedef struct {
-		int time_to_live;
-		pid_t pid;
-		const char *build_id;
-	} li_data;
 
 	//api.c
 	#define OBSERVER_QUEUE "rpm_worker_observer"
@@ -67,12 +74,12 @@
 	typedef struct {
 		const char *distrib_type, **env;
 		int write_fd;
+		usergroup omv_mock;
 	} exec_data;
 	typedef struct {
 		char *stack;
 		pid_t pid;
 		int read_fd;
 	} child;
-	child exec_build(const char *, const char **);
-
+	child exec_build(const char *, const char **, usergroup);
 #endif

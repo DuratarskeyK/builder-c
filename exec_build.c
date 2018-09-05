@@ -22,7 +22,7 @@ static int exec_init(void *arg) {
 	exec_data *data = (exec_data *)arg;
 
 	//remount proc and clear build dir
-	mount("", "/proc", "proc", MS_NOEXEC | MS_NOSUID | MS_NODEV, "");
+	mount("", "/proc", "proc", MS_PRIVATE, "");
 	system("rm -rf /home/omv/output/*");
 	pid_t pid = fork();
 
@@ -56,8 +56,8 @@ static int exec_init(void *arg) {
 		return build_status;
 	}
 	else {
-		setgid(1000);
-		setuid(1000);
+		setgid(data->omv_mock.mock_gid);
+		setuid(data->omv_mock.omv_uid);
 		dup2(data->write_fd, 1);
 		dup2(data->write_fd, 2);
 		close(data->write_fd);
@@ -69,7 +69,7 @@ static int exec_init(void *arg) {
 	return 0;
 }
 
-child exec_build(const char *distrib_type, const char **env) {
+child exec_build(const char *distrib_type, const char **env, usergroup omv_mock) {
 	pid_t pid;
 	char *stack = malloc(1048576 * 2);
 	int pfd[2];
@@ -80,7 +80,8 @@ child exec_build(const char *distrib_type, const char **env) {
 	data->distrib_type = distrib_type;
 	data->env = env;
 	data->write_fd = pfd[1];
-	pid = clone(exec_init, stack + 1048576, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
+	data->omv_mock = omv_mock;
+	pid = clone(exec_init, stack + 1048576 * 2 - 5, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
 
 	free(data);
 	close(pfd[1]);

@@ -72,10 +72,7 @@ int start_statistics_thread(const char *query_string) {
 
 	FILE *dev_random;
 
-	dev_random = fopen("/dev/random", "r");
-	if(dev_random == NULL) {
-		dev_random = fopen("/dev/urandom", "r");
-	}
+	dev_random = fopen("/dev/urandom", "r");
 
 	if(dev_random) {
 		fread(random_data, 16, 1, dev_random);
