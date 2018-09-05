@@ -81,7 +81,11 @@ child exec_build(const char *distrib_type, const char **env, usergroup omv_mock)
 	data->env = env;
 	data->write_fd = pfd[1];
 	data->omv_mock = omv_mock;
-	pid = clone(exec_init, (unsigned char *)stack + 1048576 * 2 - 4, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
+	unsigned long stack_aligned = (unsigned long)stack;
+	while(stack_aligned & 0xF) {
+		stack_aligned--;
+	}
+	pid = clone(exec_init, (unsigned char *)stack_aligned, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
 	free(data);
 	close(pfd[1]);
 	ret.pid = pid;
