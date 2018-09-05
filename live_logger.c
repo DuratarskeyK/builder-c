@@ -36,6 +36,7 @@ static void *read_log(void *arg) {
 	while((len = read(fd, str, 1024)) > 0) {
 		str[len] = 0;
 		if(flog != NULL) {
+			printf("%s", str);
 			fwrite(str, len, 1, flog);
 		}
 		pthread_mutex_lock(&buf_access);
