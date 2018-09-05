@@ -77,7 +77,7 @@
 		usergroup omv_mock;
 	} exec_data;
 	typedef struct {
-		char *stack;
+		unsigned int *stack;
 		pid_t pid;
 		int read_fd;
 	} child;

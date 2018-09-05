@@ -71,7 +71,7 @@ static int exec_init(void *arg) {
 
 child exec_build(const char *distrib_type, const char **env, usergroup omv_mock) {
 	pid_t pid;
-	char *stack = malloc(1048576 * 2);
+	unsigned int *stack = malloc(1048576 * 2);
 	int pfd[2];
 	child ret;
 	pipe(pfd);
@@ -81,8 +81,7 @@ child exec_build(const char *distrib_type, const char **env, usergroup omv_mock)
 	data->env = env;
 	data->write_fd = pfd[1];
 	data->omv_mock = omv_mock;
-	pid = clone(exec_init, stack + 1048576 * 2 - 5, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
-
+	pid = clone(exec_init, stack + 1048576 * 2 - 4, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
 	free(data);
 	close(pfd[1]);
 	ret.pid = pid;
