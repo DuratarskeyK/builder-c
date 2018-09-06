@@ -170,7 +170,7 @@ int main() {
 		int i = 0;
 		while(retries) {
 			printf("Try #%d: Sending data to abf\n", i);
-			if(api_jobs_feedback(build_id, build_status, args)) {
+			if(!api_jobs_feedback(build_id, build_status, args)) {
 				printf("Data sent.\n");
 				break;
 			} else {
