@@ -3,12 +3,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "builder.h"
+#include "statistics.h"
 
 static char *uid;
 static int is_busy = 0, is_ready = 0;
 static pthread_mutex_t busy_access;
 static pthread_t statistics_thread;
+
+extern int api_job_statistics(const char *);
 
 static void *statistics(void *arg) {
 	char hostname[128];
@@ -33,10 +35,12 @@ static void *statistics(void *arg) {
 		free(payload);
 		sleep(10);
 	}
+
+	return NULL;
 }
 
 static char char2hex(unsigned char c) {
-	if(c >= 0 && c <= 9) {
+	if(c <= 9) {
 		return '0' + c;
 	}
 	else if(c >= 10 && c <= 15) {

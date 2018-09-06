@@ -4,13 +4,16 @@
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
-#include "builder.h"
+#include "live_logger.h"
 
 static pthread_t buffer_dump_thread, read_log_thread;
 static char *key, *buf;
 static int cur_pos = 0, fd;
 static FILE *flog;
 static pthread_mutex_t buf_access;
+
+extern int api_jobs_status(const char *);
+extern int api_jobs_logs(const char *, const char *);
 
 static void *buffer_dump(void *arg) {
 	int t;
@@ -24,6 +27,8 @@ static void *buffer_dump(void *arg) {
 		pthread_mutex_unlock(&buf_access);
 		sleep(10);
 	}
+
+	return NULL;
 }
 
 static void *read_log(void *arg) {

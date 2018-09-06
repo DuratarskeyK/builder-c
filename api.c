@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <string.h>
-#include "builder.h"
+#include "api.h"
 
 static const char *token = NULL;
 static const char *api_url = NULL;
@@ -14,9 +14,8 @@ typedef struct {
 
 static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream) {
 	mem_t *c = (mem_t *)stream;
-	int offset = c->offset;
-	int to_read;
-	size_t retcode;
+	size_t offset = c->offset;
+	size_t to_read, retcode;
 
 	to_read = size * nmemb;
 	if(to_read > strlen((char *)c->ptr) - offset) {
@@ -214,7 +213,6 @@ int api_jobs_feedback(const char *build_id, int status, const char *args) {
 			sprintf(final_send, "{\"worker_queue\":\"%s\",\"worker_class\":\"%s\",\"worker_args\":[%s]}\
 								", OBSERVER_QUEUE, OBSERVER_CLASS, final_args);
 			free(final_args);
-			//printf("%s\n", final_send);
 			curl_put(path, final_send);
 			free(final_send);
 		}

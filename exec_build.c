@@ -10,7 +10,7 @@
 #include <sys/mount.h>
 #include <sched.h>
 #include <signal.h>
-#include "builder.h"
+#include "exec_build.h"
 
 static void term_handler(int signum) {
 	kill(-1, SIGTERM);
@@ -53,6 +53,7 @@ static int exec_init(void *arg) {
 			}
 		}
 
+		umount("/proc");
 		return build_status;
 	}
 	else {
@@ -81,10 +82,8 @@ child exec_build(const char *distrib_type, const char **env, usergroup omv_mock)
 	data->env = env;
 	data->write_fd = pfd[1];
 	data->omv_mock = omv_mock;
-	unsigned long stack_aligned = (unsigned long)stack;
-	while(stack_aligned & 0xF) {
-		stack_aligned--;
-	}
+	unsigned long stack_aligned = ((unsigned long)stack + 1048576 * 2) & (~0xF);
+	stack_aligned -= 0x10;
 	pid = clone(exec_init, (unsigned char *)stack_aligned, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
 	free(data);
 	close(pfd[1]);

@@ -2,10 +2,12 @@
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
-#include "builder.h"
+#include "live_inspector.h"
 
 static li_data *data = NULL;
 static pthread_t li_thread;
+
+extern int api_jobs_status(const char *);
 
 static void *live_inspector(void *arg) {
 	li_data *data = (li_data *)arg;

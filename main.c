@@ -9,14 +9,30 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
-#include "builder.h"
-#include "jsmn.h"
+#include "main.h"
+
+extern child exec_build(const char *, const char **, usergroup);
+
+extern void api_set_token(const char *);
+extern void api_set_api_url(const char *);
+
+extern int start_statistics_thread(const char *);
+extern void set_busy_status(int s);
+
+extern int api_jobs_shift(char **, const char *);
+extern int api_jobs_feedback(const char *, int, const char *);
+
+extern int start_live_logger(const char *, int);
+extern void stop_live_logger();
+
+extern int start_live_inspector(int, pid_t, const char *);
+extern void stop_live_inspector();
 
 int main() {
 	char *home_output = NULL;
 	home_output = create_output_directory();
 
-	int res, start, len;
+	int res;
 	char *query_string, *abf_api_url, *api_token, *job;
 	char **env;
 	char hostname[128], hostname_payload[156];
@@ -60,6 +76,7 @@ int main() {
 		printf("Failed to initialize statistics thread. Moving on without it.\n");
 	}
 
+	char move_cmd[1024];
 	while(1) {
 		if(api_jobs_shift(&job, query_string)) {
 			//getting a job failed
@@ -116,7 +133,6 @@ int main() {
 		printf("Build is over with status %d\n", build_status);
 
 		char *filename = malloc(strlen(home_output) + strlen("/container_data.json") + 1), *container_data;
-		struct stat fileinfo;
 		sprintf(filename, "%s/container_data.json", home_output);
 		container_data = read_file(filename);
 		if(container_data != NULL) {
@@ -125,10 +141,8 @@ int main() {
 		free(filename);
 
 		mkdir(home_output, 0666);
-		char *new_log_path = malloc(strlen(home_output) + strlen("/script_output.log") + 1);
-		sprintf(new_log_path, "%s/script_output.log", home_output);
-		rename("/tmp/script_output.log", new_log_path);
-		free(new_log_path);
+		sprintf(move_cmd, "mv /tmp/script_output.log %s/script_output.log", home_output);
+		system(move_cmd);
 
 		char *upload_cmd = malloc(strlen("/bin/bash /etc/builder-c/filestore_upload.sh ") + strlen(home_output) + 22);
 		sprintf(upload_cmd, "/bin/bash /etc/builder-c/filestore_upload.sh %s %s", api_token, home_output);
@@ -152,10 +166,19 @@ int main() {
 		sprintf(args, "{\"results\":%s,\"packages\":%s,\"exit_status\":%d,\"commit_hash\":\"%s\"}", (results ? results : "{}"), \
 				(container_data ? container_data : "{}"), status, (commit_hash ? commit_hash : ""));
 
-		printf("%s\n", args);
 		retries = 5;
-		while(api_jobs_feedback(build_id, build_status, args) && retries) {
+		int i = 0;
+		while(retries) {
+			printf("Try #%d: Sending data to abf\n", i);
+			if(api_jobs_feedback(build_id, build_status, args)) {
+				printf("Data sent.\n");
+				break;
+			} else {
+				printf("Failed to send data. Sleeping for %d seconds and retrying...\n", 1 << i);
+			}
 			retries--;
+			i++;
+			sleep(1 << i);
 		}
 
 		set_busy_status(0);
