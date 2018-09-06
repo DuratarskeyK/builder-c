@@ -27,7 +27,8 @@ static int exec_init(void *arg) {
 	pid_t pid = fork();
 
 	if(pid > 0) {
-		int status, build_status;
+		int status = 0;
+		int build_status = BUILD_FAILED;
 		struct sigaction sig;
 		sigset_t sigset;
 		sigemptyset(&sigset);
