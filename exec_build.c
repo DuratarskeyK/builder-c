@@ -12,7 +12,7 @@
 #include <signal.h>
 #include "exec_build.h"
 
-static void term_handler(int signum) {
+static void term_handler(__attribute__((unused)) int signum) {
 	kill(-1, SIGTERM);
 	wait(NULL);
 	exit(BUILD_CANCELED);

@@ -15,7 +15,7 @@ static pthread_mutex_t buf_access;
 extern int api_jobs_status(const char *);
 extern int api_jobs_logs(const char *, const char *);
 
-static void *buffer_dump(void *arg) {
+static void *buffer_dump(__attribute__((unused)) void *arg) {
 	int t;
 
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &t);
@@ -31,7 +31,7 @@ static void *buffer_dump(void *arg) {
 	return NULL;
 }
 
-static void *read_log(void *arg) {
+static void *read_log(__attribute__((unused)) void *arg) {
 	int len, d, t;
 	char str[1025];
 
