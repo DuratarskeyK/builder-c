@@ -12,9 +12,6 @@ static int cur_pos = 0, fd;
 static FILE *flog;
 static pthread_mutex_t buf_access;
 
-extern int api_jobs_status(const char *);
-extern int api_jobs_logs(const char *, const char *);
-
 static void *buffer_dump(__attribute__((unused)) void *arg) {
 	int t;
 
@@ -45,9 +42,9 @@ static void *read_log(__attribute__((unused)) void *arg) {
 			fwrite(str, len, 1, flog);
 		}
 		pthread_mutex_lock(&buf_access);
-		if(3000 - cur_pos < len) {
-			d = len - (3000 - cur_pos);
-			memmove(buf, buf + d, 3000 - d);
+		if(LIVE_LOGGER_BUFFER_SIZE - cur_pos < len) {
+			d = len - (LIVE_LOGGER_BUFFER_SIZE - cur_pos);
+			memmove(buf, buf + d, LIVE_LOGGER_BUFFER_SIZE - d);
 			cur_pos -= d;
 		}
 		cur_pos += sprintf(buf + cur_pos, "%s", str);
@@ -73,8 +70,8 @@ int start_live_logger(const char *build_id, int read_fd) {
 	pthread_mutex_init(&buf_access, NULL);
 
 	key = malloc(strlen(build_id) + strlen("abfworker::rpm-worker-") + 1);
-	buf = malloc(3001);
-	memset(buf, 0, 3001);
+	buf = malloc(LIVE_LOGGER_BUFFER_SIZE + 1);
+	memset(buf, 0, LIVE_LOGGER_BUFFER_SIZE + 1);
 	cur_pos += sprintf(buf, "\nStarting build...\n");
 
 	sprintf(key, "abfworker::rpm-worker-%s", build_id);

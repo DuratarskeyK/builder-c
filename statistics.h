@@ -9,4 +9,6 @@ static char char2hex(unsigned char);
 void set_busy_status(int s);
 int start_statistics_thread(const char *);
 
+extern int api_job_statistics(const char *);
+
 #endif

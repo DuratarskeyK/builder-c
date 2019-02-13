@@ -10,8 +10,6 @@ static int is_busy = 0, is_ready = 0;
 static pthread_mutex_t busy_access;
 static pthread_t statistics_thread;
 
-extern int api_job_statistics(const char *);
-
 static void *statistics(void *arg) {
 	char hostname[128];
 	char *query_string = (char *)arg;
