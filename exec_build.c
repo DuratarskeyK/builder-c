@@ -15,6 +15,7 @@
 static void term_handler(__attribute__((unused)) int signum) {
 	kill(-1, SIGTERM);
 	wait(NULL);
+	umount("/proc");
 	exit(BUILD_CANCELED);
 }
 
