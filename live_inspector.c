@@ -11,6 +11,8 @@ static void *live_inspector(void *arg) {
 	li_data *data = (li_data *)arg;
 	int t;
 
+	register_thread("Live Inspector");
+
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &t);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &t);
 
@@ -57,5 +59,6 @@ int start_live_inspector(int ttl, pid_t pid, const char *bid) {
 void stop_live_inspector() {
 	pthread_cancel(li_thread);
 	pthread_join(li_thread, NULL);
+	unregister_thread(li_thread);
 	free(data);
 }

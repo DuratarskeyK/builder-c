@@ -3,10 +3,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <errno.h>
 #include "statistics.h"
 
 static char *uid;
-static int is_busy = 0, is_ready = 0;
+static int is_busy = 0;
 static pthread_mutex_t busy_access;
 static pthread_t statistics_thread;
 
@@ -16,6 +17,8 @@ static void *statistics(void *arg) {
 	memset(hostname, 0, 128);
 	gethostname(hostname, 128);
 
+	register_thread("Statistics");
+	log_printf(LOG_INFO, "Statistics thread started\n");
 	while(1) {
 		// uid length plus hostname plus busy workers plus \0
 		// 162 = 32 + 128 + 1 + 1
@@ -50,15 +53,14 @@ static char char2hex(unsigned char c) {
 }
 
 void set_busy_status(int s) {
-	if(is_ready) {
-		pthread_mutex_lock(&busy_access);
-	}
-
+	pthread_mutex_lock(&busy_access);
 	is_busy = s ? 1 : 0;
-
-	if(is_ready) {
-		pthread_mutex_unlock(&busy_access);
+	if (is_busy) {
+		log_printf(LOG_DEBUG, "Builder status is busy\n");
+	} else {
+		log_printf(LOG_DEBUG, "Builder is accepting jobs\n");
 	}
+	pthread_mutex_unlock(&busy_access);
 }
 
 int start_statistics_thread(const char *query_string) {
@@ -85,9 +87,9 @@ int start_statistics_thread(const char *query_string) {
 		}
 		builder_id[32] = '\0';
 		uid = strdup(builder_id);
+		log_printf(LOG_INFO, "Builder ID is %s\n", uid);
 
 		pthread_mutex_init(&busy_access, NULL);
-		is_ready = 1;
 
 		res = pthread_create(&statistics_thread, &attr, &statistics, (void *)query_string);
 
@@ -100,6 +102,7 @@ int start_statistics_thread(const char *query_string) {
 		return 0;
 	}
 	else {
+		log_printf(LOG_ERROR, "/dev/urandom is inaccessible, can't generate builder ID, error: %s\n", strerror(errno));
 		return -1;
 	}
 }

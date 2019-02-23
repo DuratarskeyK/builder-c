@@ -3,6 +3,7 @@
 
 #include "structs.h"
 #include "api_data.h"
+#include "log_levels.h"
 
 static void *statistics(void *);
 static char char2hex(unsigned char);
@@ -10,5 +11,8 @@ void set_busy_status(int s);
 int start_statistics_thread(const char *);
 
 extern int api_job_statistics(const char *);
+
+extern void register_thread(const char *name);
+extern void log_printf(unsigned int level, const char *message, ...);
 
 #endif

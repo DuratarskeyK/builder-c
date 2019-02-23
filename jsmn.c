@@ -308,3 +308,10 @@ void jsmn_init(jsmn_parser *parser) {
 	parser->toknext = 0;
 	parser->toksuper = -1;
 }
+
+int count_json_tokens(const char *json, size_t length) {
+	jsmn_parser json_parser;
+	jsmn_init(&json_parser);
+
+	return jsmn_parse(&json_parser, json, length, NULL, 0);
+}

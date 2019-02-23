@@ -2,15 +2,17 @@
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <string.h>
+#include <ctype.h>
 #include "api.h"
 
 static const char *token = NULL;
 static const char *api_url = NULL;
 
-typedef struct {
-	const char *ptr;
-	int offset;
-} mem_t;
+void init_api(const char *url, const char *api_token) {
+	curl_global_init(CURL_GLOBAL_ALL);
+	token = api_token;
+	api_url = url;
+}
 
 static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream) {
 	mem_t *c = (mem_t *)stream;
@@ -40,6 +42,10 @@ static int curl_get(const char *url, char **buf) {
 	CURLcode res;
 	FILE *tmpf;
 	long pos;
+	char errbuf[CURL_ERROR_SIZE];
+	errbuf[0] = 0;
+
+	log_printf(LOG_DEBUG, "libcurl: Starting GET to %s\n", url);
 
 	tmpf = tmpfile();
 
@@ -49,12 +55,20 @@ static int curl_get(const char *url, char **buf) {
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)tmpf);
 	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-	if(token != NULL) {
-		curl_easy_setopt(curl_handle, CURLOPT_USERNAME, token);
-	}
+	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errbuf);
+	curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1L);
+	curl_easy_setopt(curl_handle, CURLOPT_USERNAME, token);
 
 	res = curl_easy_perform(curl_handle);
 	if(res != CURLE_OK) {
+		log_printf(LOG_ERROR, "libcurl: There was an error performing request:\n");
+		log_printf(LOG_ERROR, "libcurl: Error code %d\n", res);
+		size_t len = strlen(errbuf);
+		if (len) {
+			log_printf(LOG_ERROR, "libcurl: %s%s", errbuf, ((errbuf[len - 1] != '\n') ? "\n" : ""));
+		} else {
+			log_printf(LOG_ERROR, "%s\n", curl_easy_strerror(res));
+		}
 		fclose(tmpf);
 		curl_easy_cleanup(curl_handle);
 		return 1;
@@ -62,10 +76,12 @@ static int curl_get(const char *url, char **buf) {
 	else {
 		fflush(tmpf);
 		pos = ftell(tmpf);
+		log_printf(LOG_DEBUG, "libcurl: Request successful. Received %d bytes.\n", pos);
 		fseek(tmpf, 0, SEEK_SET);
 		*buf = malloc((size_t)(pos + 1));
 		fread(*buf, pos, 1, tmpf);
 		(*buf)[pos] = '\0';
+		log_printf(LOG_DEBUG, "Received body: %s\n", *buf);
 	}
 
 	fclose(tmpf);
@@ -77,6 +93,12 @@ static int curl_put(const char *url, const char *buf) {
 	CURL *curl;
 	CURLcode res;
 	mem_t mem;
+	char errbuf[CURL_ERROR_SIZE];
+	errbuf[0] = 0;
+
+	log_printf(LOG_DEBUG, "libcurl: Starting PUT to %s\n", url);
+	log_printf(LOG_DEBUG, "libcurl: Body size %d\n", strlen(buf));
+	log_printf(LOG_DEBUG, "libcurl: Body contents: %s\n", buf);
 
 	struct curl_slist *headers=NULL;
 	headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -95,35 +117,31 @@ static int curl_put(const char *url, const char *buf) {
  	curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
  	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
  	curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)strlen(buf));
- 	if(token != NULL) {
-		curl_easy_setopt(curl, CURLOPT_USERNAME, token);
-	}
+	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+	curl_easy_setopt(curl, CURLOPT_USERNAME, token);
 
  	res = curl_easy_perform(curl);
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
  	if(res != CURLE_OK) {
- 		curl_slist_free_all(headers);
- 		curl_easy_cleanup(curl);
+		log_printf(LOG_ERROR, "libcurl: There was an error performing request:\n");
+		log_printf(LOG_ERROR, "libcurl: Error code %d\n", res);
+		size_t len = strlen(errbuf);
+		if (len) {
+			log_printf(LOG_ERROR, "libcurl: %s%s", errbuf, ((errbuf[len - 1] != '\n') ? "\n" : ""));
+		} else {
+			log_printf(LOG_ERROR, "%s\n", curl_easy_strerror(res));
+		}
  		return 1;
  	}
+	log_printf(LOG_DEBUG, "libcurl: Request successful.\n");
 
- 	curl_slist_free_all(headers);
- 	curl_easy_cleanup(curl);
  	return 0;
-}
-
-void api_set_token(const char *t) {
-	token = t;
-}
-
-void api_set_api_url(const char *url) {
-	api_url = url;
 }
 
 int api_job_statistics(const char *payload) {
 	char *path;
-	if(api_url == NULL) {
-		return -1;
-	}
 
 	path = malloc(strlen(api_url) + strlen(API_JOBS_STATISTICS) + 1);
 	sprintf(path, "%s%s", api_url, API_JOBS_STATISTICS);
@@ -246,7 +264,10 @@ int api_jobs_logs(const char *key, const char *buf) {
 			case '\n': p += sprintf(p, "\\n"); break;
 			case '\r': p += sprintf(p, "\\r"); break;
 			case '\t': p += sprintf(p, "\\t"); break;
-			default: *(p++) = c; break;
+			default:
+				if (isprint(c)) {
+					*(p++) = c;
+				}
 		}
 	}
 	*p = '\0';
@@ -261,13 +282,3 @@ int api_jobs_logs(const char *key, const char *buf) {
 
 	return 0;
 }
-
-/*int api_jobs_shift(char **buf) {
-	FILE *a;
-	*buf = malloc(809);
-	a = fopen("test.api", "r");
-	fread(*buf, 808, 1, a);
-	(*buf)[808] = '\0';
-	fclose(a);
-	return 0;
-}*/

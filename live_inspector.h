@@ -9,4 +9,8 @@ void stop_live_inspector();
 
 extern int api_jobs_status(const char *);
 
+extern void register_thread(const char *name);
+extern void unregister_thread(pthread_t tid);
+extern void log_printf(unsigned int level, const char *message, ...);
+
 #endif
