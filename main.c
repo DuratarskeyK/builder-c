@@ -159,7 +159,7 @@ int main() {
 		}
 
 		char *args = malloc((container_data ? strlen(container_data) : 0) + (results ? strlen(results) : 0) + 2048);
-		sprintf(args, build_completed_args_fmt, (results ? results : "{}"), \
+		sprintf(args, build_completed_args_fmt, (results ? results : "[]"), \
 				(container_data ? container_data : "{}"), status, (commit_hash ? commit_hash : ""));
 
 		retries = 5;
