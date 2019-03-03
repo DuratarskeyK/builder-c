@@ -89,7 +89,7 @@ void unregister_thread(pthread_t tid) {
 		pthread_mutex_unlock(&logger_access);    
 		return;
 	}
-	thread_config_t *p = thread_config, *prev;
+	thread_config_t *p = thread_config, *prev = NULL;
 
 	do {
 		if (pthread_equal(p->tid, tid)) {

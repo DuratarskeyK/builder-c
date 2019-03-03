@@ -225,7 +225,7 @@ int api_jobs_feedback(const char *build_id, int status, const char *args) {
 			final_args = malloc(strlen(args) + strlen(",\"id\":xxxxxxxxxxxx,\"status\":xxx}") + 1);
 			sprintf(final_args, "%s,\"id\":%s,\"status\":%d}", args, build_id, status);
 			final_args[len-1] = ' ';
-			final_send = malloc(strlen(args) + strlen(",\"id\":xxxxxxxxxxxx,\"status\":xxx}")\
+			final_send = malloc(strlen(final_args) + strlen(",\"id\":xxxxxxxxxxxx,\"status\":xxx}")\
 						 + strlen("{\"worker_queue\":\"\",\"worker_class\":\"\",\"worker_args\":[]}") +\
 						 strlen(OBSERVER_QUEUE) + strlen(OBSERVER_CLASS) + 1);
 			sprintf(final_send, "{\"worker_queue\":\"%s\",\"worker_class\":\"%s\",\"worker_args\":[%s]}\

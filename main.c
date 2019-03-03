@@ -72,7 +72,6 @@ int main() {
 
 		res = parse_job_description(job, &build_id, &ttl, &distrib_type, &env);
 		free(job);
-		// no job
 		if(res < 0) {
 			sleep(10);
 			continue;
@@ -117,7 +116,7 @@ int main() {
 			log_printf(LOG_WARN, "Live logger failed to start. Live log will be unavailable.\n");
 		}
 
-		int status, build_status;
+		int status, build_status = BUILD_COMPLETED;
 		waitpid(script.pid, &status, 0);
 		stop_live_inspector();
 		stop_live_logger();
