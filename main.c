@@ -62,7 +62,7 @@ int main() {
 	while(1) {
 		char *job;
 		if(api_jobs_shift(&job, query_string)) {
-			sleep(10);
+			//sleep(10);
 			continue;
 		}
 
