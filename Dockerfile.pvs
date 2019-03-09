@@ -1,0 +1,20 @@
+FROM openmandriva/cooker
+
+ENV PVS_VERSION 7.00.29701.851
+
+RUN dnf --nogpgcheck --refresh --assumeyes --nodocs --setopt=install_weak_deps=False upgrade \
+ && dnf --nogpgcheck --assumeyes --setopt=install_weak_deps=False --nodocs install git clang \
+         curl make cmake curl-devel libconfig-devel glibc-static-devel lib64stdc++-static-devel strace \
+ && curl -L http://files.viva64.com/pvs-studio-$PVS_VERSION-x86_64.rpm -o /root/pvs.rpm \
+ && curl -L https://github.com/viva64/how-to-use-pvs-studio-free/releases/download/v1.1/how-to-use-pvs-studio-free.tar.gz -o /root/htupvsf.tar.gz \
+ && tar -xvf /root/htupvsf.tar.gz -C /usr/bin/ \
+ && dnf install -y /root/pvs.rpm \
+ && dnf --assumeyes autoremove \
+ && dnf clean all \
+ && rm -rf /var/cache/dnf/* \
+ && rm -rf /var/lib/dnf/yumdb/* \
+ && rm -rf /var/lib/dnf/history/* \
+ && rm -rf /usr/share/man/ /usr/share/cracklib /usr/share/doc /tmp/*
+
+COPY entrypoint.sh /sbin/entrypoint.sh
+ENTRYPOINT ["/sbin/entrypoint.sh"]
