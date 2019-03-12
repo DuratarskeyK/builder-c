@@ -44,14 +44,14 @@ static void *read_log(__attribute__((unused)) void *arg) {
 		if(flog != NULL) {
 			fwrite(str, len, 1, flog);
 		}
-		pthread_mutex_lock(&buf_access);
+		/* pthread_mutex_lock(&buf_access);
 		if(LIVE_LOGGER_BUFFER_SIZE - cur_pos < len) {
 			d = len - (LIVE_LOGGER_BUFFER_SIZE - cur_pos);
 			memmove(buf, buf + d, LIVE_LOGGER_BUFFER_SIZE - d);
 			cur_pos -= d;
 		}
 		cur_pos += sprintf(buf + cur_pos, "%s", str);
-		pthread_mutex_unlock(&buf_access);
+		pthread_mutex_unlock(&buf_access); */
 	}
 	if(flog != NULL) {
 		fclose(flog);
@@ -78,7 +78,7 @@ int start_live_logger(const char *build_id, int read_fd) {
 
 	sprintf(key, "abfworker::rpm-worker-%s", build_id);
 
-	res = pthread_create(&buffer_dump_thread, &attr, &buffer_dump, NULL);
+	/* res = pthread_create(&buffer_dump_thread, &attr, &buffer_dump, NULL);
 
 	if(res != 0) {
 		free(key);
@@ -86,7 +86,7 @@ int start_live_logger(const char *build_id, int read_fd) {
 		pthread_mutex_destroy(&buf_access);
 		pthread_attr_destroy(&attr);
 		return -1;
-	}
+	} */
 
 	flog = fopen("/tmp/script_output.log", "w");
 	if (flog == NULL) {
@@ -100,7 +100,7 @@ int start_live_logger(const char *build_id, int read_fd) {
 		free(buf);
 		pthread_mutex_destroy(&buf_access);
 		pthread_attr_destroy(&attr);
-		pthread_cancel(buffer_dump_thread);
+		// pthread_cancel(buffer_dump_thread);
 		return -1;
 	}
 
@@ -110,11 +110,11 @@ int start_live_logger(const char *build_id, int read_fd) {
 }
 
 void stop_live_logger() {
-	pthread_cancel(buffer_dump_thread);
+	// pthread_cancel(buffer_dump_thread);
 	pthread_cancel(read_log_thread);
-	pthread_join(buffer_dump_thread, NULL);
+	// pthread_join(buffer_dump_thread, NULL);
 	pthread_join(read_log_thread, NULL);
-	unregister_thread(buffer_dump_thread);
+	// unregister_thread(buffer_dump_thread);
 	unregister_thread(read_log_thread);
 	pthread_mutex_destroy(&buf_access);
 	free(key);
