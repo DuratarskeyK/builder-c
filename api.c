@@ -251,7 +251,7 @@ int api_jobs_logs(const char *key, const char *buf) {
 	sprintf(path, "%s%s", api_url, API_JOBS_LOGS);
 
 	int len = strlen(buf), i;
-	char *escaped_buf = malloc(len * 2);
+	char *escaped_buf = malloc(len * 2 + 1);
 	char *p = escaped_buf;
 
 	for(i = 0; i<len; i++) {

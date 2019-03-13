@@ -69,8 +69,7 @@ void register_thread(const char *name) {
 
 	do {
 		if (pthread_equal(p->tid, tid)) {
-			// log
-			pthread_mutex_unlock(&logger_access);      
+			pthread_mutex_unlock(&logger_access);
 			return;
 		}
 		if (p->next == NULL) {
@@ -85,7 +84,6 @@ void register_thread(const char *name) {
 void unregister_thread(pthread_t tid) {
 	pthread_mutex_lock(&logger_access);
 	if (thread_config == NULL) {
-		// log
 		pthread_mutex_unlock(&logger_access);    
 		return;
 	}
@@ -109,7 +107,6 @@ void unregister_thread(pthread_t tid) {
 	} while((p = p->next));
 
 	pthread_mutex_unlock(&logger_access);
-	// log
 }
 
 void log_printf(unsigned int level, const char *message, ...) {
