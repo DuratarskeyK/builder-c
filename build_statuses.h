@@ -7,5 +7,6 @@
 #define BUILD_STARTED   3
 #define BUILD_CANCELED  4
 #define TESTS_FAILED    5
+#define ARCH_FAILED     6
 
 #endif

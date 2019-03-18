@@ -10,7 +10,8 @@ static const char *build_statuses_str[] = {"BUILD_COMPLETED",
 																					 "BUILD_PENDING",
 																					 "BUILD_STARTED",
 																					 "BUILD_CANCELED",
-																					 "TESTS_FAILED"};
+																					 "TESTS_FAILED",
+																					 "ARCH_FAILED"};
 
 static const char hostname_payload_fmt[] = "{\"hostname\":\"%s\"}";
 static const char move_output_cmd_fmt[] = "mv /tmp/script_output.log %s/script_output.log";

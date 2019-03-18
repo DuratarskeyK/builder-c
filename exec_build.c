@@ -50,6 +50,9 @@ static int exec_init(void *arg) {
 			else if(status) {
 				build_status = BUILD_FAILED;
 			}
+			else if(status == 6) {
+				build_status = ARCH_FAILED;
+			}
 			else {
 				build_status = BUILD_COMPLETED;
 			}
