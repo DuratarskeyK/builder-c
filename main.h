@@ -6,11 +6,11 @@
 #include "log_levels.h"
 
 static const char *build_statuses_str[] = {"BUILD_COMPLETED",
-																					 "BUILD_FAILED",
-																					 "BUILD_PENDING",
-																					 "BUILD_STARTED",
-																					 "BUILD_CANCELED",
-																					 "TESTS_FAILED"};
+                                           "BUILD_FAILED",
+                                           "BUILD_PENDING",
+                                           "BUILD_STARTED",
+                                           "BUILD_CANCELED",
+                                           "TESTS_FAILED"};
 
 static const char hostname_payload_fmt[] = "{\"hostname\":\"%s\"}";
 static const char move_output_cmd_fmt[] = "mv /tmp/script_output.log %s/script_output.log";
@@ -37,7 +37,7 @@ extern int start_live_logger(const char *, int);
 extern void stop_live_logger();
 
 extern int start_live_inspector(int, pid_t, const char *);
-extern void stop_live_inspector();
+extern int stop_live_inspector();
 
 extern int init_logger(const char *level);
 extern void register_thread(const char *name);

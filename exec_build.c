@@ -16,7 +16,7 @@ static void term_handler(__attribute__((unused)) int signum) {
 	kill(-1, SIGTERM);
 	wait(NULL);
 	umount("/proc");
-	exit(BUILD_CANCELED);
+	exit(0);
 }
 
 static int exec_init(void *arg) {
@@ -29,7 +29,6 @@ static int exec_init(void *arg) {
 
 	if(pid > 0) {
 		int status = 0;
-		int build_status = BUILD_FAILED;
 		struct sigaction sig;
 		sigset_t sigset;
 		sigemptyset(&sigset);
@@ -42,21 +41,12 @@ static int exec_init(void *arg) {
 
 		waitpid(pid, &status, 0);
 
-		if(WIFEXITED(status)) {
-			status = WEXITSTATUS(status);
-			if(status == 5) {
-				build_status = TESTS_FAILED;
-			}
-			else if(status) {
-				build_status = BUILD_FAILED;
-			}
-			else {
-				build_status = BUILD_COMPLETED;
-			}
-		}
-
 		umount("/proc");
-		return build_status;
+		if (WIFEXITED(status)) {
+			exit(WEXITSTATUS(status));
+		} else if(WIFSIGNALED(status)) {
+			exit(255);
+		}
 	}
 	else {
 		setgid(data->omv_mock.mock_gid);

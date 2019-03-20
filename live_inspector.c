@@ -4,28 +4,29 @@
 #include <unistd.h>
 #include "live_inspector.h"
 
+static int stop = 0, canceled = 0;
 static li_data *data = NULL;
 static pthread_t li_thread;
 
 static void *live_inspector(void *arg) {
 	li_data *data = (li_data *)arg;
-	int t;
 
 	register_thread("Live Inspector");
 
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &t);
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &t);
-
 	unsigned long endtime = (unsigned long)time(NULL) + data->time_to_live;
 
-	while(1) {
+	while(!stop) {
 		unsigned long curtime = (unsigned long)time(NULL);
 		int status = api_jobs_status(data->build_id);
 		if(status || curtime > endtime) {
 			kill(data->pid, SIGTERM);
+			canceled = 1;
+			break;
 		}
-		sleep(10);
+		sleep(3);
 	}
+	free(data);
+	unregister_thread(li_thread);
 
 	return NULL;
 }
@@ -44,8 +45,8 @@ int start_live_inspector(int ttl, pid_t pid, const char *bid) {
 		return -1;
 	}
 
+	stop = canceled = 0;
 	res = pthread_create(&li_thread, &attr, &live_inspector, data);
-
 	if(res != 0) {
 		pthread_attr_destroy(&attr);
 		return -1;
@@ -56,9 +57,9 @@ int start_live_inspector(int ttl, pid_t pid, const char *bid) {
 	return 0;
 }
 
-void stop_live_inspector() {
-	pthread_cancel(li_thread);
+int stop_live_inspector() {
+	stop = 1;
 	pthread_join(li_thread, NULL);
-	unregister_thread(li_thread);
-	free(data);
+	stop = 0;
+	return canceled;
 }

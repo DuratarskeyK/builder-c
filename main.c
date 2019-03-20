@@ -118,14 +118,25 @@ int main() {
 
 		int status, build_status = BUILD_COMPLETED;
 		waitpid(script.pid, &status, 0);
-		stop_live_inspector();
+		int canceled = stop_live_inspector();
 		stop_live_logger();
 
-		if(WIFEXITED(status)) {
-			build_status = WEXITSTATUS(status);
+		int exit_code = 0;
+		if (canceled) {
+			build_status = BUILD_CANCELED;
 		}
-		else if(WIFSIGNALED(status)) {
-			build_status = BUILD_FAILED;
+		else if(WIFEXITED(status)) {
+			exit_code = WEXITSTATUS(status);
+			switch(exit_code) {
+				case 0:
+					build_status = BUILD_COMPLETED;
+					break;
+				case 5:
+					build_status = TESTS_FAILED;
+					break;
+				default:
+					build_status = BUILD_FAILED;
+			}
 		}
 
 		free(script.stack);
@@ -159,7 +170,7 @@ int main() {
 
 		char *args = malloc((container_data ? strlen(container_data) : 0) + (results ? strlen(results) : 0) + 2048);
 		sprintf(args, build_completed_args_fmt, (results ? results : "[]"), \
-				(container_data ? container_data : "{}"), status, (commit_hash ? commit_hash : ""));
+				(container_data ? container_data : "{}"), exit_code, (commit_hash ? commit_hash : ""));
 
 		retries = 5;
 		try = 0;
