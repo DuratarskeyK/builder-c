@@ -8,34 +8,37 @@
 #include "live_logger.h"
 
 static pthread_t buffer_dump_thread, read_log_thread;
-static char *key, *buf;
-static int cur_pos = 0, fd;
+static int stop, fd;
+static char *buf;
 static FILE *flog;
 static pthread_mutex_t buf_access;
 
-static void *buffer_dump(__attribute__((unused)) void *arg) {
-	int t;
-
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &t);
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &t);
+static void *buffer_dump(void *arg) {
+	char *build_id = (char *)arg;
+	char *key = malloc(strlen(build_id) + strlen("abfworker::rpm-worker-") + 1);
+	sprintf(key, "abfworker::rpm-worker-%s", build_id);
 
 	register_thread("Livelogger");
-	while(1) {
+	while(!stop) {
+		if(buf[0] == '\0') {
+			continue;
+		}
 		pthread_mutex_lock(&buf_access);
 		api_jobs_logs(key, buf);
 		pthread_mutex_unlock(&buf_access);
 		sleep(10);
 	}
+	free(key);
+	unregister_thread(buffer_dump_thread);
 
 	return NULL;
 }
 
 static void *read_log(__attribute__((unused)) void *arg) {
-	int len, d, t;
+	int len, d, cur_pos;
 	char str[1025];
 
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &t);
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &t);
+	cur_pos = sprintf(buf, "Starting build...\n");
 
 	register_thread("LOG");
 	while((len = read(fd, str, 1024)) > 0) {
@@ -52,18 +55,26 @@ static void *read_log(__attribute__((unused)) void *arg) {
 		}
 		cur_pos += sprintf(buf + cur_pos, "%s", str);
 		pthread_mutex_unlock(&buf_access);
+		if(stop) {
+			break;
+		}
 	}
 	if(flog != NULL) {
 		fclose(flog);
 		flog = NULL;
 	}
+	free(buf);
+	close(fd);
+	unregister_thread(read_log_thread);
 
 	return NULL;
 }
 
-int start_live_logger(const char *build_id, int read_fd) {
+int start_live_logger(char *build_id, int read_fd) {
 	pthread_attr_t attr;
 	int res;
+
+	stop = 0;
 
 	res = pthread_attr_init(&attr);
 	if(res != 0) {
@@ -71,18 +82,11 @@ int start_live_logger(const char *build_id, int read_fd) {
 	}
 	pthread_mutex_init(&buf_access, NULL);
 
-	key = malloc(strlen(build_id) + strlen("abfworker::rpm-worker-") + 1);
 	buf = malloc(LIVE_LOGGER_BUFFER_SIZE + 1);
 	memset(buf, 0, LIVE_LOGGER_BUFFER_SIZE + 1);
-	cur_pos += sprintf(buf, "Starting build...\n");
 
-	sprintf(key, "abfworker::rpm-worker-%s", build_id);
-
-	res = pthread_create(&buffer_dump_thread, &attr, &buffer_dump, NULL);
-
+	res = pthread_create(&buffer_dump_thread, &attr, &buffer_dump, (void *)build_id);
 	if(res != 0) {
-		free(key);
-		free(buf);
 		pthread_mutex_destroy(&buf_access);
 		pthread_attr_destroy(&attr);
 		return -1;
@@ -90,14 +94,12 @@ int start_live_logger(const char *build_id, int read_fd) {
 
 	flog = fopen("/tmp/script_output.log", "w");
 	if (flog == NULL) {
-		log_printf(LOG_WARN, "Can't open /tmp/script_output.log, error: %s\n", strerror(errno));
+		log_printf(LOG_ERROR, "Can't open /tmp/script_output.log, error: %s\n", strerror(errno));
 	}
+
 	fd = read_fd;
 	res = pthread_create(&read_log_thread, &attr, &read_log, NULL);
-
 	if(res != 0) {
-		free(key);
-		free(buf);
 		pthread_mutex_destroy(&buf_access);
 		pthread_attr_destroy(&attr);
 		pthread_cancel(buffer_dump_thread);
@@ -110,17 +112,9 @@ int start_live_logger(const char *build_id, int read_fd) {
 }
 
 void stop_live_logger() {
-	pthread_cancel(buffer_dump_thread);
-	pthread_cancel(read_log_thread);
+	stop = 1;
 	pthread_join(buffer_dump_thread, NULL);
 	pthread_join(read_log_thread, NULL);
-	unregister_thread(buffer_dump_thread);
-	unregister_thread(read_log_thread);
 	pthread_mutex_destroy(&buf_access);
-	free(key);
-	free(buf);
-	if(flog != NULL) {
-		fclose(flog);
-	}
-	close(fd);
+	stop = 0;
 }

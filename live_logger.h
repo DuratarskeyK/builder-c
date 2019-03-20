@@ -7,7 +7,7 @@
 
 static void *buffer_dump(void *);
 static void *read_log(void *);
-int start_live_logger(const char *, int);
+int start_live_logger(char *, int);
 void stop_live_logger();
 
 extern int api_jobs_status(const char *);
