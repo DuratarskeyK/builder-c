@@ -10,6 +10,8 @@ static void *read_log(void *);
 int start_live_logger(char *, int);
 void stop_live_logger();
 
+static const char start_build_str[] = "Starting build...\n";
+
 extern int api_jobs_status(const char *);
 extern int api_jobs_logs(const char *, const char *);
 
