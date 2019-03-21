@@ -20,9 +20,6 @@ static void *buffer_dump(void *arg) {
 
 	register_thread("Livelogger");
 	while(!stop) {
-		if(buf[0] == '\0') {
-			continue;
-		}
 		pthread_mutex_lock(&buf_access);
 		api_jobs_logs(key, buf);
 		pthread_mutex_unlock(&buf_access);
@@ -38,7 +35,7 @@ static void *read_log(__attribute__((unused)) void *arg) {
 	int len, d, cur_pos;
 	char str[1025];
 
-	cur_pos = sprintf(buf, "Starting build...\n");
+	cur_pos = 18;
 
 	register_thread("LOG");
 	while((len = read(fd, str, 1024)) > 0) {
@@ -63,7 +60,6 @@ static void *read_log(__attribute__((unused)) void *arg) {
 		fclose(flog);
 		flog = NULL;
 	}
-	free(buf);
 	close(fd);
 	unregister_thread(read_log_thread);
 
@@ -84,6 +80,7 @@ int start_live_logger(char *build_id, int read_fd) {
 
 	buf = malloc(LIVE_LOGGER_BUFFER_SIZE + 1);
 	memset(buf, 0, LIVE_LOGGER_BUFFER_SIZE + 1);
+	sprintf(buf, "Starting build...\n");
 
 	res = pthread_create(&buffer_dump_thread, &attr, &buffer_dump, (void *)build_id);
 	if(res != 0) {
@@ -116,5 +113,6 @@ void stop_live_logger() {
 	pthread_join(buffer_dump_thread, NULL);
 	pthread_join(read_log_thread, NULL);
 	pthread_mutex_destroy(&buf_access);
+	free(buf);
 	stop = 0;
 }

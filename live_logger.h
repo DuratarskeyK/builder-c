@@ -1,7 +1,7 @@
 #ifndef _LIVE_LOGGER_H
 #define _LIVE_LOGGER_H
 
-#define LIVE_LOGGER_BUFFER_SIZE 8000
+#define LIVE_LOGGER_BUFFER_SIZE 10000
 
 #include "log_levels.h"
 
