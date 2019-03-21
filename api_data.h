@@ -10,6 +10,6 @@
 #define API_JOBS_STATISTICS "/jobs/statistics"
 #define API_LOGS_PAYLOAD "{\"name\":\"%s\",\"logs\":\"%s\"}"
 #define API_STATUS_QUERYSTRING "?key=abfworker::rpm-worker-%s::live-inspector"
-#define API_STATISTICS_PAYLOAD "{\"uid\":\"%s\",\"worker_count\":1,\"busy_workers\":%d,\"host\":\"%s\",\"query_string\":\"%s\"}"
+#define API_STATISTICS_PAYLOAD "{\"uid\":\"%s\",\"worker_count\":1,\"busy_workers\":%d,\"host\":\"%s\",\"query_string\":\"%s\",\"last_build_id\":\"%s\"}"
 
 #endif

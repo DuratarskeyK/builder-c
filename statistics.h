@@ -7,7 +7,7 @@
 
 static void *statistics(void *);
 static char char2hex(unsigned char);
-void set_busy_status(int s);
+void set_busy_status(int s, const char *build_id);
 int start_statistics_thread(const char *);
 
 extern int api_job_statistics(const char *);

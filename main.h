@@ -31,7 +31,7 @@ extern int api_jobs_shift(char **, const char *);
 extern int api_jobs_feedback(const char *, int, const char *);
 
 extern int start_statistics_thread(const char *);
-extern void set_busy_status(int s);
+extern void set_busy_status(int s, const char *build_id);
 
 extern int start_live_logger(const char *, int);
 extern void stop_live_logger();

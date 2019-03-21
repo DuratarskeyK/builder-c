@@ -6,7 +6,7 @@
 #include <errno.h>
 #include "statistics.h"
 
-static char *uid;
+static char *uid, *last_build_id = NULL;
 static int is_busy = 0;
 static pthread_mutex_t busy_access;
 static pthread_t statistics_thread;
@@ -20,17 +20,19 @@ static void *statistics(void *arg) {
 	register_thread("Statistics");
 	log_printf(LOG_INFO, "Statistics thread started\n");
 	while(1) {
+		char *payload;
 		// uid length plus hostname plus busy workers plus \0
 		// 162 = 32 + 128 + 1 + 1
-		char *payload;
-		if(query_string) {
-			payload = malloc(strlen(API_STATISTICS_PAYLOAD) + strlen(query_string) + 162);
+		size_t len = strlen(API_STATISTICS_PAYLOAD) + 162;
+		if (query_string) {
+			len += strlen(query_string);
 		}
-		else {
-			payload = malloc(strlen(API_STATISTICS_PAYLOAD) + 162);
+		if (last_build_id) {
+			len += strlen(last_build_id);
 		}
+		payload = malloc(len);
 		pthread_mutex_lock(&busy_access);
-		sprintf(payload, API_STATISTICS_PAYLOAD, uid, is_busy, hostname, (query_string ? query_string : ""));
+		sprintf(payload, API_STATISTICS_PAYLOAD, uid, is_busy, hostname, (query_string ? query_string : ""), (last_build_id == NULL ? "" : last_build_id));
 		pthread_mutex_unlock(&busy_access);
 		api_job_statistics(payload);
 		free(payload);
@@ -52,13 +54,19 @@ static char char2hex(unsigned char c) {
 	}
 }
 
-void set_busy_status(int s) {
+void set_busy_status(int s, const char *build_id) {
 	pthread_mutex_lock(&busy_access);
 	is_busy = s ? 1 : 0;
 	if (is_busy) {
 		log_printf(LOG_DEBUG, "Builder status is busy\n");
 	} else {
 		log_printf(LOG_DEBUG, "Builder is accepting jobs\n");
+	}
+	if (build_id != NULL) {
+		if (last_build_id != NULL) {
+			free(last_build_id);
+		}
+		last_build_id = strdup(build_id);
 	}
 	pthread_mutex_unlock(&busy_access);
 }

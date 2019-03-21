@@ -81,7 +81,7 @@ int main() {
 		log_printf(LOG_INFO, "Sending build start notification to ABF.\n");
 		retries = 5;
 		try = 0;
-		set_busy_status(1);
+		set_busy_status(1, build_id);
 		int build_start_success = 0;
 		while(retries) {
 			log_printf(LOG_INFO, "Try #%d: Sending data to ABF.\n", try + 1);
@@ -105,6 +105,7 @@ int main() {
 				free(env[i]);
 			}
 			free(env);
+			set_busy_status(0, NULL);
 			continue;
 		}
 
@@ -187,7 +188,7 @@ int main() {
 			try++;
 		}
 
-		set_busy_status(0);
+		set_busy_status(0, NULL);
 		free(args);
 		free(build_id);
 
