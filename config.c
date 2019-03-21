@@ -27,17 +27,17 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 
 	log_printf(LOG_INFO, "Config parsed successfuly.\n");
 
-	const char *tmp, *arches, *native_arches, *platforms;
+	char *tmp, *arches, *native_arches, *platforms, *platform_types;
 
 	int req_res;
-	req_res = config_lookup_string(&config, api_url_path, &tmp);
+	req_res = config_lookup_string(&config, api_url_path, (const char **)&tmp);
 	if(!req_res) {
 		log_printf(LOG_FATAL, "%s must be set.\n", api_url_path);
 		config_destroy(&config);
 		return -1;
 	}
 	*abf_api_url = strdup(tmp);
-	req_res = config_lookup_string(&config, build_token_path, &tmp);
+	req_res = config_lookup_string(&config, build_token_path, (const char **)&tmp);
 	if(!req_res) {
 		tmp = getenv(build_token_env);
 		if(tmp == NULL) {
@@ -51,7 +51,7 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 	log_printf(LOG_INFO, "Found api base url: %s\n", *abf_api_url);
 	log_printf(LOG_INFO, "Found build token: [REDACTED]\n");
 
-	int supported_arches_exist = config_lookup_string(&config, supported_arches_path, &arches);
+	int supported_arches_exist = config_lookup_string(&config, supported_arches_path, (const char **)&arches);
 	if(!supported_arches_exist) {
 		tmp = getenv(supported_arches_env);
 		if(tmp != NULL) {
@@ -59,7 +59,7 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 			supported_arches_exist = 1;
 		}
 	}
-	int native_arches_exist = config_lookup_string(&config, native_arches_path, &native_arches);
+	int native_arches_exist = config_lookup_string(&config, native_arches_path, (const char **)&native_arches);
 	if(!native_arches_exist) {
 		tmp = getenv(native_arches_env);
 		if(tmp != NULL) {
@@ -67,7 +67,7 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 			native_arches_exist = 1;
 		}
 	}
-	int supported_platforms_exist = config_lookup_string(&config, supported_platforms_path, &platforms);
+	int supported_platforms_exist = config_lookup_string(&config, supported_platforms_path, (const char **)&platforms);
 	if(!supported_platforms_exist) {
 		tmp = getenv(supported_platforms_env);
 		if(tmp != NULL) {
@@ -75,13 +75,22 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 			supported_platforms_exist = 1;
 		}
 	}
+	int supported_platform_types_exist = config_lookup_string(&config, supported_platform_types_path, (const char **)&platform_types);
+	if(!supported_platform_types_exist) {
+		tmp = getenv(supported_platform_types_env);
+		if(tmp != NULL) {
+			platform_types = strdup(tmp);
+			supported_platform_types_exist = 1;
+		}
+	}
 	int len = (supported_arches_exist ? strlen(arches) : 0) +
 						(native_arches_exist ? strlen(native_arches) : 0) +
-						(supported_platforms_exist ? strlen(platforms) : 0);
+						(supported_platforms_exist ? strlen(platforms) : 0) +
+						(supported_platform_types_exist ? strlen(platform_types) : 0);
 
 	if(len) {
 		char *pointer;
-		*query_string = malloc(len + 50);
+		*query_string = malloc(len + 80);
 		pointer = *query_string;
 		if(supported_arches_exist) {
 			pointer += sprintf(pointer, "arches=%s&", arches);
@@ -92,8 +101,12 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 			log_printf(LOG_INFO, "Found native arches: %s\n", native_arches);
 		}
 		if(supported_platforms_exist) {
-			pointer += sprintf(pointer, "platforms=%s", platforms);
+			pointer += sprintf(pointer, "platforms=%s&", platforms);
 			log_printf(LOG_INFO, "Found supported platforms: %s\n", platforms);
+		}
+		if(supported_platform_types_exist) {
+			pointer += sprintf(pointer, "platform_types=%s", platform_types);
+			log_printf(LOG_INFO, "Found supported platform types: %s\n", platform_types);
 		}
 
 		pointer-=1;

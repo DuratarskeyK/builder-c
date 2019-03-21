@@ -16,6 +16,9 @@ static const char native_arches_env[] = "NATIVE_ARCH";
 static const char supported_platforms_path[] = "application.abf.supported_platforms";
 static const char supported_platforms_env[] = "BUILD_PLATFORM";
 
+static const char supported_platform_types_path[] = "application.abf.supported_platform_types";
+static const char supported_platform_types_env[] = "BUILD_PLATFORM_TYPE";
+
 static const char platforms_list_path[] = "application.platforms.list";
 static const char platform_git_path[] = "application.platforms.%s.git";
 static const char platform_branch_path[] = "application.platforms.%s.branch";
