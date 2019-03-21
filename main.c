@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <curl/curl.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
@@ -13,7 +14,7 @@
 
 static const char home_output[] = "/home/omv/output";
 static char *container_data_path, *upload_cmd, *commit_hash_path;
-static char *hostname_payload, *move_output_cmd;
+static char *hostname_payload, *move_output_cmd, *fail_reason_path;
 
 int main() {
 	int res, try, retries;
@@ -169,9 +170,23 @@ int main() {
 			unlink(commit_hash_path);
 		}
 
+		char *fail_reason = NULL;
+		if (build_status == BUILD_FAILED) {
+			fail_reason = read_file(fail_reason_path);
+			for (unsigned int i = 0; i < strlen(fail_reason); i++) {
+				if (!isprint(fail_reason[i])) {
+					fail_reason[i] = ' ';
+				}
+			}
+			if(fail_reason != NULL) {
+				unlink(fail_reason_path);
+			}
+		}
+
 		char *args = malloc((container_data ? strlen(container_data) : 0) + (results ? strlen(results) : 0) + 2048);
 		sprintf(args, build_completed_args_fmt, (results ? results : "[]"), \
-				(container_data ? container_data : "{}"), exit_code, (commit_hash ? commit_hash : ""));
+				(container_data ? container_data : "{}"), exit_code, (commit_hash ? commit_hash : ""),
+				(fail_reason ? fail_reason : ""));
 
 		retries = 5;
 		try = 0;
@@ -200,6 +215,9 @@ int main() {
 		}
 		if(container_data) {
 			free(container_data);
+		}
+		if(fail_reason) {
+			free(fail_reason);
 		}
 	}
 
@@ -258,4 +276,7 @@ static void init_strings(const char *api_token) {
 
 	commit_hash_path = malloc(strlen(commit_hash_path_fmt) + strlen(home_output));
 	sprintf(commit_hash_path, commit_hash_path_fmt, home_output);
+
+	fail_reason_path = malloc(strlen(fail_reason_path_fmt) + strlen(home_output));
+	sprintf(fail_reason_path, fail_reason_path_fmt, home_output);
 }

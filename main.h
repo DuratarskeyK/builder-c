@@ -17,8 +17,9 @@ static const char move_output_cmd_fmt[] = "mv /tmp/script_output.log %s/script_o
 static const char container_data_path_fmt[] = "%s/container_data.json";
 static const char commit_hash_path_fmt[] = "%s/../commit_hash";
 static const char upload_cmd_fmt[] = "/bin/bash /etc/builder-c/filestore_upload.sh %s %s";
+static const char fail_reason_path_fmt[] = "%s/../build_fail_reason.log";
 
-static const char build_completed_args_fmt[] = "{\"results\":%s,\"packages\":%s,\"exit_status\":%d,\"commit_hash\":\"%s\"}";
+static const char build_completed_args_fmt[] = "{\"results\":%s,\"packages\":%s,\"exit_status\":%d,\"commit_hash\":\"%s\",\"fail_reason\":\"%s\"}";
 
 static void init_strings(const char *api_token);
 static usergroup get_omv_uid_mock_gid();
