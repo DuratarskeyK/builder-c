@@ -174,7 +174,7 @@ int main() {
 		if (build_status == BUILD_FAILED) {
 			fail_reason = read_file(fail_reason_path);
 			for (unsigned int i = 0; i < strlen(fail_reason); i++) {
-				if (!isprint(fail_reason[i])) {
+				if (!isprint(fail_reason[i]) || fail_reason[i] == '"') {
 					fail_reason[i] = ' ';
 				}
 			}
