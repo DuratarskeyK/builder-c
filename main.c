@@ -140,6 +140,10 @@ int main() {
 					build_status = BUILD_FAILED;
 			}
 		}
+		else if(WIFSIGNALED(status)) {
+			exit_code = 255;
+			build_status = BUILD_FAILED;
+		}
 
 		free(script.stack);
 		for(int i = 0; i < res; i++) {
