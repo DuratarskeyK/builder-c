@@ -12,10 +12,6 @@
 #include <errno.h>
 #include "main.h"
 
-static const char home_output[] = "/home/omv/output";
-static char *container_data_path, *upload_cmd, *commit_hash_path;
-static char *hostname_payload, *move_output_cmd, *fail_reason_path;
-
 int main() {
 	int res, try, retries;
 	char *query_string, *abf_api_url, *api_token;
@@ -112,17 +108,29 @@ int main() {
 
 		child script = exec_build(distrib_type, (char * const *)env, omv_mock);
 
+		int live_inspector_started = 1;
+		log_printf(LOG_INFO, "Starting live inspector, build's time to live is %d seconds.\n", ttl);
 		if(start_live_inspector(ttl, script.pid, build_id) < 0) {
-			log_printf(LOG_WARN, "Live inspector failed to start. Job canceling and timeout is unavailable.\n");
+			live_inspector_started = 0;
+			log_printf(LOG_WARN, "Live inspector failed to start. Job canceling and timeout will be unavailable.\n");
 		}
+
+		int live_logger_started = 1;
+		log_printf(LOG_INFO, "Starting live logger.\n");
 		if(start_live_logger(build_id, script.read_fd) < 0) {
+			live_logger_started = 0;
 			log_printf(LOG_WARN, "Live logger failed to start. Live log will be unavailable.\n");
 		}
 
 		int status, build_status = BUILD_COMPLETED;
 		waitpid(script.pid, &status, 0);
-		int canceled = stop_live_inspector();
-		stop_live_logger();
+		int canceled = 0;
+		if (live_inspector_started) {
+			int canceled = stop_live_inspector();
+		}
+		if (live_logger_started) {
+			stop_live_logger();
+		}
 
 		int exit_code = 0;
 		if (canceled) {
@@ -157,21 +165,14 @@ int main() {
 		mkdir(home_output, 0666);
 		system(move_output_cmd);
 
-		char *container_data = read_file(container_data_path);
-		if(container_data != NULL) {
-			unlink(container_data_path);
-		}
 
 		system(upload_cmd);
-		char *results = read_file("/tmp/results.json");
-		if(results != NULL) {
-			unlink("/tmp/results.json");
-		}
 
+		char *container_data = read_file(container_data_path);
+		char *results = read_file("/tmp/results.json");
 		char *commit_hash = read_file(commit_hash_path);
 		if(commit_hash != NULL) {
 			commit_hash[40] = '\0';
-			unlink(commit_hash_path);
 		}
 
 		char *fail_reason = NULL;
@@ -254,6 +255,7 @@ static char *read_file(const char *path) {
 		fread(res, fileinfo.st_size, 1, fn);
 		res[fileinfo.st_size] = '\0';
 		fclose(fn);
+		unlink(path);
 		return res;
 	}
 	else {

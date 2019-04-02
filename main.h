@@ -12,12 +12,16 @@ static const char *build_statuses_str[] = {"BUILD_COMPLETED",
                                            "BUILD_CANCELED",
                                            "TESTS_FAILED"};
 
+static const char home_output[] = "/home/omv/output";
 static const char hostname_payload_fmt[] = "{\"hostname\":\"%s\"}";
 static const char move_output_cmd_fmt[] = "mv /tmp/script_output.log %s/script_output.log";
 static const char container_data_path_fmt[] = "%s/container_data.json";
 static const char commit_hash_path_fmt[] = "%s/../commit_hash";
 static const char upload_cmd_fmt[] = "/bin/bash /etc/builder-c/filestore_upload.sh %s %s";
 static const char fail_reason_path_fmt[] = "%s/../build_fail_reason.log";
+
+static char *container_data_path, *upload_cmd, *commit_hash_path;
+static char *hostname_payload, *move_output_cmd, *fail_reason_path;
 
 static const char build_completed_args_fmt[] = "{\"results\":%s,\"packages\":%s,\"exit_status\":%d,\"commit_hash\":\"%s\",\"fail_reason\":\"%s\"}";
 
