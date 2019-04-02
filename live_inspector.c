@@ -35,7 +35,7 @@ static void *live_inspector(void *arg) {
 
 int start_live_inspector(int ttl, pid_t pid, const char *bid) {
 	int res;
-	data = malloc(sizeof(li_data));
+	data = xmalloc(sizeof(li_data));
 
 	data->time_to_live = ttl;
 	data->pid = pid;

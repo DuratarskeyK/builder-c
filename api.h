@@ -21,4 +21,6 @@ typedef struct {
 
 extern void log_printf(unsigned int level, const char *message, ...);
 
+extern void *xmalloc(size_t size);
+
 #endif

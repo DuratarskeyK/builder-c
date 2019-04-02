@@ -16,4 +16,6 @@ void register_thread(const char *name);
 void unregister_thread(pthread_t tid);
 void log_printf(unsigned int level, const char *message, ...);
 
+extern void *xmalloc(size_t size);
+
 #endif

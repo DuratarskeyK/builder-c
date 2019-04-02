@@ -14,7 +14,7 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 	res = jsmn_parse(&json_parser, js, strlen(js), NULL, 0);
 
 	if(res > 0) {
-		json = malloc(res * sizeof(jsmntok_t));
+		json = xmalloc(res * sizeof(jsmntok_t));
 		jsmn_init(&json_parser);
 		res = jsmn_parse(&json_parser, js, strlen(js), json, res);
 	}
@@ -49,7 +49,7 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 
 	int cmd_params_len = json[j+1].size, cur_env = 0;
 	//cmd_params + 6 necessary parameters + NULL
-	*env = malloc((cmd_params_len + 7) * sizeof(char *));
+	*env = xmalloc((cmd_params_len + 7) * sizeof(char *));
 
 	while(i < res) {
 		int param_len = json[i].end - json[i].start;
@@ -88,7 +88,7 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 		}
 		else if(COMPARE(start, "include_repos", param_len)) {
 			int repos_len = json[i+1].size;
-			char *repo_names = malloc(json[i+1].end-json[i+1].start), *repo_urls = malloc(json[i+1].end-json[i+1].start);
+			char *repo_names = xmalloc(json[i+1].end-json[i+1].start), *repo_urls = xmalloc(json[i+1].end-json[i+1].start);
 			char *prn = repo_names, *pru = repo_urls;
 			i += 2;
 
@@ -149,7 +149,7 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 }
 
 static char *make_env(const char *key, const char *value) {
-	char *res = malloc(strlen(key) + strlen(value) + 2);
+	char *res = xmalloc(strlen(key) + strlen(value) + 2);
 
 	sprintf(res, "%s=%s", key, value);
 

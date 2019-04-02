@@ -13,4 +13,6 @@ extern void register_thread(const char *name);
 extern void unregister_thread(pthread_t tid);
 extern void log_printf(unsigned int level, const char *message, ...);
 
+extern void *xmalloc(size_t size);
+
 #endif

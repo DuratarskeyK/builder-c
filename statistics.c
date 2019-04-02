@@ -30,7 +30,7 @@ static void *statistics(void *arg) {
 		if (last_build_id) {
 			len += strlen(last_build_id);
 		}
-		payload = malloc(len);
+		payload = xmalloc(len);
 		pthread_mutex_lock(&busy_access);
 		sprintf(payload, API_STATISTICS_PAYLOAD, uid, is_busy, hostname, (query_string ? query_string : ""), (last_build_id == NULL ? "" : last_build_id));
 		pthread_mutex_unlock(&busy_access);

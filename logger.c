@@ -32,7 +32,7 @@ int init_logger(const char *level) {
 }
 
 static thread_config_t *new_thread_config(pthread_t tid, const char *name) {
-	thread_config_t *result = (thread_config_t *)malloc(sizeof(thread_config_t));
+	thread_config_t *result = (thread_config_t *)xmalloc(sizeof(thread_config_t));
 	result->tid = tid;
 	result->name = name;
 	result->next = NULL;
@@ -137,7 +137,7 @@ void log_printf(unsigned int level, const char *message, ...) {
 	}
 
 	size++;
-	p = malloc(size);
+	p = xmalloc(size);
 
 	va_start(ap, message);
 	size = vsnprintf(p, size, message, ap);

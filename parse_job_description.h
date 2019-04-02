@@ -6,4 +6,6 @@ static char *make_env(const char *key, const char *value);
 
 #define COMPARE(var, str, len) (strlen(str) == (len) && !strncmp(var, str, len))
 
+extern void *xmalloc(size_t size);
+
 #endif

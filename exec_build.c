@@ -30,7 +30,7 @@ static int exec_init(void *arg) {
 
 child exec_build(const char *distrib_type, char * const *env, usergroup omv_mock) {
 	pid_t pid;
-	unsigned int *stack = malloc(STACK_SIZE);
+	unsigned int *stack = xmalloc(STACK_SIZE);
 	int pfd[2];
 	child ret;
 	pipe(pfd);
@@ -38,13 +38,13 @@ child exec_build(const char *distrib_type, char * const *env, usergroup omv_mock
 	// clean output directory
 	system("rm -rf /home/omv/output/*");
 
-	exec_data_t *data = malloc(sizeof(exec_data_t));
+	exec_data_t *data = xmalloc(sizeof(exec_data_t));
 	data->env = env;
 	data->omv_mock = omv_mock;
 	unsigned long stack_aligned = ((unsigned long)stack + STACK_SIZE) & (~0xF);
 	stack_aligned -= 0x10;
 
-	char *cmd = malloc(strlen(cmd_fmt) + strlen(distrib_type) + 128);
+	char *cmd = xmalloc(strlen(cmd_fmt) + strlen(distrib_type) + 128);
 	sprintf(cmd, cmd_fmt, distrib_type, pfd[1], pfd[1]);
 	argv[3] = cmd;
 

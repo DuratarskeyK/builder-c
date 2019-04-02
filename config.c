@@ -90,7 +90,7 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 
 	if(len) {
 		char *pointer;
-		*query_string = malloc(len + 80);
+		*query_string = xmalloc(len + 80);
 		pointer = *query_string;
 		if(supported_arches_exist) {
 			pointer += sprintf(pointer, "arches=%s&", arches);
@@ -126,7 +126,7 @@ int process_config(char **abf_api_url, char **api_token, char **query_string) {
 			int git_exists, branch_exists;
 			platform_type = config_setting_get_string_elem(platforms_list, i);
 
-			char *config_path = malloc(strlen(platform_branch_path) + strlen(platform_type));
+			char *config_path = xmalloc(strlen(platform_branch_path) + strlen(platform_type));
 			sprintf(config_path, platform_git_path, platform_type);
 			git_exists = config_lookup_string(&config, config_path, &git_path);
 
@@ -157,7 +157,7 @@ static int load_scripts(const char *git_repo, const char *git_branch, const char
   if (git_branch) {
     len += strlen(git_branch);
   }
-	char *cmd = malloc(len);
+	char *cmd = xmalloc(len);
 	int res;
 
 	if(git_branch != NULL) {

@@ -32,4 +32,6 @@ static int load_scripts(const char *git_repo, const char *git_branch, const char
 extern void log_printf(unsigned int level, const char *message, ...);
 extern int system_with_output(const char *cmd, char **output);
 
+extern void *xmalloc(size_t size);
+
 #endif

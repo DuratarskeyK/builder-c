@@ -12,4 +12,6 @@ typedef struct {
 
 child exec_build(const char *, char * const *, usergroup);
 
+extern void *xmalloc(size_t size);
+
 #endif

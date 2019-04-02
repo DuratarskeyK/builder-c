@@ -15,7 +15,7 @@ static pthread_mutex_t buf_access;
 
 static void *buffer_dump(void *arg) {
 	char *build_id = (char *)arg;
-	char *key = malloc(strlen(build_id) + strlen("abfworker::rpm-worker-") + 1);
+	char *key = xmalloc(strlen(build_id) + strlen("abfworker::rpm-worker-") + 1);
 	sprintf(key, "abfworker::rpm-worker-%s", build_id);
 
 	register_thread("Livelogger");
@@ -75,7 +75,7 @@ int start_live_logger(char *build_id, int read_fd) {
 
 	pthread_mutex_init(&buf_access, NULL);
 
-	buf = malloc(LIVE_LOGGER_BUFFER_SIZE + 1);
+	buf = xmalloc(LIVE_LOGGER_BUFFER_SIZE + 1);
 	memset(buf, 0, LIVE_LOGGER_BUFFER_SIZE + 1);
 	sprintf(buf, start_build_str);
 

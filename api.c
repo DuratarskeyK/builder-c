@@ -78,7 +78,7 @@ static int curl_get(const char *url, char **buf) {
 		pos = ftell(tmpf);
 		log_printf(LOG_DEBUG, "libcurl: Request successful. Received %d bytes.\n", pos);
 		fseek(tmpf, 0, SEEK_SET);
-		*buf = malloc((size_t)(pos + 1));
+		*buf = xmalloc((size_t)(pos + 1));
 		fread(*buf, pos, 1, tmpf);
 		(*buf)[pos] = '\0';
 		log_printf(LOG_DEBUG, "Received body: %s\n", *buf);
@@ -143,7 +143,7 @@ static int curl_put(const char *url, const char *buf) {
 int api_job_statistics(const char *payload) {
 	char *path;
 
-	path = malloc(strlen(api_url) + strlen(API_JOBS_STATISTICS) + 1);
+	path = xmalloc(strlen(api_url) + strlen(API_JOBS_STATISTICS) + 1);
 	sprintf(path, "%s%s", api_url, API_JOBS_STATISTICS);
 
 	if(curl_put(path, payload)) {
@@ -163,11 +163,11 @@ int api_jobs_shift(char **buf, const char *query_string) {
 	}
 
 	if(query_string != NULL) {
-		path = malloc(strlen(api_url) + strlen(API_JOBS_SHIFT) + strlen(query_string) + 2);
+		path = xmalloc(strlen(api_url) + strlen(API_JOBS_SHIFT) + strlen(query_string) + 2);
 		sprintf(path, "%s%s?%s", api_url, API_JOBS_SHIFT, query_string);
 	}
 	else {
-		path = malloc(strlen(api_url) + strlen(API_JOBS_SHIFT) + 1);
+		path = xmalloc(strlen(api_url) + strlen(API_JOBS_SHIFT) + 1);
 		sprintf(path, "%s%s", api_url, API_JOBS_SHIFT);
 	}
 
@@ -185,7 +185,7 @@ int api_jobs_status(const char *build_id) {
 		return -1;
 	}
 
-	char *path = malloc(strlen(api_url) + strlen(API_JOBS_STATUS) + strlen(build_id) + strlen(API_STATUS_QUERYSTRING) + 1);
+	char *path = xmalloc(strlen(api_url) + strlen(API_JOBS_STATUS) + strlen(build_id) + strlen(API_STATUS_QUERYSTRING) + 1);
 
 	sprintf(path, "%s%s" API_STATUS_QUERYSTRING, api_url, API_JOBS_STATUS, build_id);
 
@@ -216,16 +216,16 @@ int api_jobs_feedback(const char *build_id, int status, const char *args) {
 		return -1;
 	}
 
-	path = malloc(strlen(api_url) + strlen(API_JOBS_FEEDBACK) + 1);
+	path = xmalloc(strlen(api_url) + strlen(API_JOBS_FEEDBACK) + 1);
 	sprintf(path, "%s%s", api_url, API_JOBS_FEEDBACK);
 	char *final_send, *final_args;
 	if(args) {
 		int len = strlen(args);
 		if(args[0] == '{' && args[len-1] == '}') {
-			final_args = malloc(strlen(args) + strlen(",\"id\":xxxxxxxxxxxx,\"status\":xxx}") + 1);
+			final_args = xmalloc(strlen(args) + strlen(",\"id\":xxxxxxxxxxxx,\"status\":xxx}") + 1);
 			sprintf(final_args, "%s,\"id\":%s,\"status\":%d}", args, build_id, status);
 			final_args[len-1] = ' ';
-			final_send = malloc(strlen(final_args) + strlen(",\"id\":xxxxxxxxxxxx,\"status\":xxx}")\
+			final_send = xmalloc(strlen(final_args) + strlen(",\"id\":xxxxxxxxxxxx,\"status\":xxx}")\
 						 + strlen("{\"worker_queue\":\"\",\"worker_class\":\"\",\"worker_args\":[]}") +\
 						 strlen(OBSERVER_QUEUE) + strlen(OBSERVER_CLASS) + 1);
 			sprintf(final_send, "{\"worker_queue\":\"%s\",\"worker_class\":\"%s\",\"worker_args\":[%s]}\
@@ -247,11 +247,11 @@ int api_jobs_logs(const char *key, const char *buf) {
 		return -1;
 	}
 
-	path = malloc(strlen(api_url) + strlen(API_JOBS_LOGS) + 1);
+	path = xmalloc(strlen(api_url) + strlen(API_JOBS_LOGS) + 1);
 	sprintf(path, "%s%s", api_url, API_JOBS_LOGS);
 
 	int len = strlen(buf), i;
-	char *escaped_buf = malloc(len * 2 + 1);
+	char *escaped_buf = xmalloc(len * 2 + 1);
 	char *p = escaped_buf;
 
 	for(i = 0; i<len; i++) {
@@ -272,7 +272,7 @@ int api_jobs_logs(const char *key, const char *buf) {
 	}
 	*p = '\0';
 
-	char *payload = malloc(strlen(escaped_buf) + strlen(API_LOGS_PAYLOAD) + strlen(key) + 1);
+	char *payload = xmalloc(strlen(escaped_buf) + strlen(API_LOGS_PAYLOAD) + strlen(key) + 1);
 	sprintf(payload, API_LOGS_PAYLOAD, key, escaped_buf);
 	free(escaped_buf);
 

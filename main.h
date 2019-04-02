@@ -56,4 +56,6 @@ extern int system_with_output(const char *cmd, char **output);
 
 extern int parse_job_description(const char *, char **, int *, char **, char ***);
 
+extern void *xmalloc(size_t size);
+
 #endif

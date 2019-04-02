@@ -187,7 +187,7 @@ int main() {
 			}
 		}
 
-		char *args = malloc((container_data ? strlen(container_data) : 0) + (results ? strlen(results) : 0) + 2048);
+		char *args = xmalloc((container_data ? strlen(container_data) : 0) + (results ? strlen(results) : 0) + 2048);
 		sprintf(args, build_completed_args_fmt, (results ? results : "[]"), \
 				(container_data ? container_data : "{}"), exit_code, (commit_hash ? commit_hash : ""),
 				(fail_reason ? fail_reason : ""));
@@ -251,7 +251,7 @@ static char *read_file(const char *path) {
 	struct stat fileinfo;
 
 	if(fn != NULL && !fstat(fileno(fn), &fileinfo)) {
-		char *res = malloc(fileinfo.st_size + 1);
+		char *res = xmalloc(fileinfo.st_size + 1);
 		fread(res, fileinfo.st_size, 1, fn);
 		res[fileinfo.st_size] = '\0';
 		fclose(fn);
@@ -267,21 +267,21 @@ static char *read_file(const char *path) {
 static void init_strings(const char *api_token) {
 	char hostname[128];
 	gethostname(hostname, 128);
-	hostname_payload = malloc(strlen(hostname) + strlen(hostname_payload_fmt) + 1);
+	hostname_payload = xmalloc(strlen(hostname) + strlen(hostname_payload_fmt) + 1);
 	sprintf(hostname_payload, hostname_payload_fmt, hostname);
 
-	move_output_cmd = malloc(strlen(move_output_cmd_fmt) + strlen(home_output) + 1);
+	move_output_cmd = xmalloc(strlen(move_output_cmd_fmt) + strlen(home_output) + 1);
 	sprintf(move_output_cmd, move_output_cmd_fmt, home_output);
 
-	container_data_path = malloc(strlen(container_data_path_fmt) + strlen(home_output) + 1);
+	container_data_path = xmalloc(strlen(container_data_path_fmt) + strlen(home_output) + 1);
 	sprintf(container_data_path, container_data_path_fmt, home_output);
 
-	upload_cmd = malloc(strlen(upload_cmd_fmt) + strlen(api_token) + strlen(home_output) + 1);
+	upload_cmd = xmalloc(strlen(upload_cmd_fmt) + strlen(api_token) + strlen(home_output) + 1);
 	sprintf(upload_cmd, upload_cmd_fmt, api_token, home_output);
 
-	commit_hash_path = malloc(strlen(commit_hash_path_fmt) + strlen(home_output) + 1);
+	commit_hash_path = xmalloc(strlen(commit_hash_path_fmt) + strlen(home_output) + 1);
 	sprintf(commit_hash_path, commit_hash_path_fmt, home_output);
 
-	fail_reason_path = malloc(strlen(fail_reason_path_fmt) + strlen(home_output) + 1);
+	fail_reason_path = xmalloc(strlen(fail_reason_path_fmt) + strlen(home_output) + 1);
 	sprintf(fail_reason_path, fail_reason_path_fmt, home_output);
 }
