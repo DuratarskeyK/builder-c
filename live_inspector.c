@@ -19,7 +19,7 @@ static void *live_inspector(void *arg) {
 		unsigned long curtime = (unsigned long)time(NULL);
 		int status = api_jobs_status(data->build_id);
 		if(status || curtime > endtime) {
-			kill(data->pid, SIGTERM);
+			kill(data->pid, SIGKILL);
 			canceled = 1;
 			break;
 		}

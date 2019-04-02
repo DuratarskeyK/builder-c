@@ -14,13 +14,6 @@ typedef struct {
 } usergroup;
 
 typedef struct {
-	const char *distrib_type, **env;
-	int write_fd;
-	usergroup omv_mock;
-} exec_data;
-
-typedef struct {
-	unsigned int *stack;
 	pid_t pid;
 	int read_fd;
 } child;

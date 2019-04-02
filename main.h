@@ -25,7 +25,7 @@ static void init_strings(const char *api_token);
 static usergroup get_omv_uid_mock_gid();
 static char *read_file(const char *);
 
-extern child exec_build(const char *, const char **, usergroup);
+extern child exec_build(const char *, char * const *, usergroup);
 
 extern void init_api(const char *url, const char *api_token);
 extern int api_jobs_shift(char **, const char *);

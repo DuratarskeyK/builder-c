@@ -110,7 +110,8 @@ int main() {
 			continue;
 		}
 
-		child script = exec_build(distrib_type, (const char **)env, omv_mock);
+		child script = exec_build(distrib_type, (char * const *)env, omv_mock);
+
 		if(start_live_inspector(ttl, script.pid, build_id) < 0) {
 			log_printf(LOG_WARN, "Live inspector failed to start. Job canceling and timeout is unavailable.\n");
 		}
@@ -145,7 +146,6 @@ int main() {
 			build_status = BUILD_FAILED;
 		}
 
-		free(script.stack);
 		for(int i = 0; i < res; i++) {
 			free(env[i]);
 		}
