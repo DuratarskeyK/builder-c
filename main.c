@@ -126,7 +126,7 @@ int main() {
 		waitpid(script.pid, &status, 0);
 		int canceled = 0;
 		if (live_inspector_started) {
-			int canceled = stop_live_inspector();
+			canceled = stop_live_inspector();
 		}
 		if (live_logger_started) {
 			stop_live_logger();
