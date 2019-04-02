@@ -10,6 +10,7 @@ int system_with_output(const char *cmd, char **output) {
   sprintf(final_cmd, "(%s) 1>&%d 2>&%d", cmd, fd, fd);
   int exit_code = system(final_cmd);
   fflush(temp);
+  free(final_cmd);
   long pos = ftell(temp);
   fseek(temp, 0, SEEK_SET);
   *output = malloc((size_t)(pos + 1));
