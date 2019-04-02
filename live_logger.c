@@ -23,7 +23,9 @@ static void *buffer_dump(void *arg) {
 		pthread_mutex_lock(&buf_access);
 		api_jobs_logs(key, buf);
 		pthread_mutex_unlock(&buf_access);
-		sleep(10);
+		for (int i = 0; !stop && i < 10; i++) {
+			sleep(1);
+		}
 	}
 	free(key);
 	unregister_thread(buffer_dump_thread);

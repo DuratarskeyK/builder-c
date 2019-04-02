@@ -23,7 +23,9 @@ static void *live_inspector(void *arg) {
 			canceled = 1;
 			break;
 		}
-		sleep(3);
+		for (int i = 0; !stop && i < 3; i++) {
+			sleep(1);
+		}
 	}
 	free(data);
 	unregister_thread(li_thread);
