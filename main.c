@@ -177,13 +177,12 @@ int main() {
 		char *fail_reason = NULL;
 		if (build_status == BUILD_FAILED) {
 			fail_reason = read_file(fail_reason_path);
-			for (unsigned int i = 0; i < strlen(fail_reason); i++) {
-				if (!isprint(fail_reason[i]) || fail_reason[i] == '"') {
-					fail_reason[i] = ' ';
+			if (fail_reason != NULL) {
+				for (unsigned int i = 0; i < strlen(fail_reason); i++) {
+					if (!isprint(fail_reason[i]) || fail_reason[i] == '"') {
+						fail_reason[i] = ' ';
+					}
 				}
-			}
-			if(fail_reason != NULL) {
-				unlink(fail_reason_path);
 			}
 		}
 
