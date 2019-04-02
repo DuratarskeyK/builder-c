@@ -34,7 +34,6 @@ static void *live_inspector(void *arg) {
 }
 
 int start_live_inspector(int ttl, pid_t pid, const char *bid) {
-	pthread_attr_t attr;
 	int res;
 	data = malloc(sizeof(li_data));
 
@@ -42,19 +41,11 @@ int start_live_inspector(int ttl, pid_t pid, const char *bid) {
 	data->pid = pid;
 	data->build_id = bid;
 
-	res = pthread_attr_init(&attr);
-	if(res != 0) {
-		return -1;
-	}
-
 	stop = canceled = 0;
-	res = pthread_create(&li_thread, &attr, &live_inspector, data);
+	res = pthread_create(&li_thread, NULL, &live_inspector, data);
 	if(res != 0) {
-		pthread_attr_destroy(&attr);
 		return -1;
 	}
-
-	pthread_attr_destroy(&attr);
 
 	return 0;
 }

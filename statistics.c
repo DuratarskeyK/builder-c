@@ -75,12 +75,6 @@ int start_statistics_thread(const char *query_string) {
 	unsigned char random_data[16];
 	char builder_id[33];
 	int res;
-	pthread_attr_t attr;
-
-	res = pthread_attr_init(&attr);
-	if(res != 0) {
-		return -1;
-	}
 
 	FILE *dev_random;
 
@@ -99,14 +93,12 @@ int start_statistics_thread(const char *query_string) {
 
 		pthread_mutex_init(&busy_access, NULL);
 
-		res = pthread_create(&statistics_thread, &attr, &statistics, (void *)query_string);
+		res = pthread_create(&statistics_thread, NULL, &statistics, (void *)query_string);
 
 		if(res) {
-			pthread_attr_destroy(&attr);
 			return -1;
 		}
 
-		pthread_attr_destroy(&attr);
 		return 0;
 	}
 	else {

@@ -69,25 +69,19 @@ static void *read_log(__attribute__((unused)) void *arg) {
 }
 
 int start_live_logger(char *build_id, int read_fd) {
-	pthread_attr_t attr;
 	int res;
 
 	stop = 0;
 
-	res = pthread_attr_init(&attr);
-	if(res != 0) {
-		return -1;
-	}
 	pthread_mutex_init(&buf_access, NULL);
 
 	buf = malloc(LIVE_LOGGER_BUFFER_SIZE + 1);
 	memset(buf, 0, LIVE_LOGGER_BUFFER_SIZE + 1);
 	sprintf(buf, start_build_str);
 
-	res = pthread_create(&buffer_dump_thread, &attr, &buffer_dump, (void *)build_id);
+	res = pthread_create(&buffer_dump_thread, NULL, &buffer_dump, (void *)build_id);
 	if(res != 0) {
 		pthread_mutex_destroy(&buf_access);
-		pthread_attr_destroy(&attr);
 		return -1;
 	}
 
@@ -97,15 +91,12 @@ int start_live_logger(char *build_id, int read_fd) {
 	}
 
 	fd = read_fd;
-	res = pthread_create(&read_log_thread, &attr, &read_log, NULL);
+	res = pthread_create(&read_log_thread, NULL, &read_log, NULL);
 	if(res != 0) {
 		pthread_mutex_destroy(&buf_access);
-		pthread_attr_destroy(&attr);
 		pthread_cancel(buffer_dump_thread);
 		return -1;
 	}
-
-	pthread_attr_destroy(&attr);
 
 	return 0;
 }
