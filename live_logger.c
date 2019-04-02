@@ -8,7 +8,7 @@
 #include "live_logger.h"
 
 static pthread_t buffer_dump_thread, read_log_thread;
-static int stop, fd;
+static int stop, log_read_fd;
 static char *buf;
 static FILE *flog;
 static pthread_mutex_t buf_access;
@@ -40,7 +40,7 @@ static void *read_log(__attribute__((unused)) void *arg) {
 	cur_pos = strlen(start_build_str);
 
 	register_thread("LOG");
-	while((len = read(fd, str, 1024)) > 0) {
+	while((len = read(log_read_fd, str, 1024)) > 0) {
 		str[len] = 0;
 		log_printf(LOG_INFO, "%s", str);
 		if(flog != NULL) {
@@ -62,7 +62,7 @@ static void *read_log(__attribute__((unused)) void *arg) {
 		fclose(flog);
 		flog = NULL;
 	}
-	close(fd);
+	close(log_read_fd);
 	unregister_thread(read_log_thread);
 
 	return NULL;
@@ -77,7 +77,7 @@ int start_live_logger(char *build_id, int read_fd) {
 
 	buf = xmalloc(LIVE_LOGGER_BUFFER_SIZE + 1);
 	memset(buf, 0, LIVE_LOGGER_BUFFER_SIZE + 1);
-	sprintf(buf, start_build_str);
+	sprintf(buf, "%s", start_build_str);
 
 	res = pthread_create(&buffer_dump_thread, NULL, &buffer_dump, (void *)build_id);
 	if(res != 0) {
@@ -90,7 +90,7 @@ int start_live_logger(char *build_id, int read_fd) {
 		log_printf(LOG_ERROR, "Can't open /tmp/script_output.log, error: %s\n", strerror(errno));
 	}
 
-	fd = read_fd;
+	log_read_fd = read_fd;
 	res = pthread_create(&read_log_thread, NULL, &read_log, NULL);
 	if(res != 0) {
 		pthread_mutex_destroy(&buf_access);

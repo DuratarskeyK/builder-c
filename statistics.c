@@ -46,7 +46,7 @@ static char char2hex(unsigned char c) {
 	if(c <= 9) {
 		return '0' + c;
 	}
-	else if(c >= 10 && c <= 15) {
+	else if(c <= 15) {
 		return 'a' + (c - 10);
 	}
 	else {
