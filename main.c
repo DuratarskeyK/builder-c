@@ -22,6 +22,11 @@ int main() {
 	}
 	register_thread("Main");
 
+	if(!thread_setup()) {
+		log_printf(LOG_FATAL, "Failed to setup openssl mutexes. Exiting...\n");
+		return 9;
+	}
+
 	log_printf(LOG_INFO, "Starting DNS check...\n");
 	res = check_dns();
 	if (res < 0) {
@@ -164,7 +169,6 @@ int main() {
 
 		mkdir(home_output, 0666);
 		system(move_output_cmd);
-
 
 		system(upload_cmd);
 

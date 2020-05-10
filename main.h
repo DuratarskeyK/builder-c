@@ -58,4 +58,6 @@ extern int parse_job_description(const char *, char **, int *, char **, char ***
 
 extern void *xmalloc(size_t size);
 
+extern int thread_setup();
+
 #endif
