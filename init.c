@@ -349,8 +349,11 @@ static int get_platform_list(config_t *config) {
 			}
 			platform_path = xmalloc(strlen(builder_config.git_scripts_dir) + strlen(name) + 2);
 			sprintf(platform_path, "%s/%s", builder_config.git_scripts_dir, name);
+			builder_config.builder_scripts[i].is_git = 1;
+			builder_config.builder_scripts[i].branch = strdup(branch);
 		} else if(!git_exists && path_exists) {
 			platform_path = strdup(path);
+			builder_config.builder_scripts[i].is_git = 0;
 		} else {
 			log_printf(LOG_FATAL, "Platform %s: One of git, path is expected.\n", name);
 			return -1;

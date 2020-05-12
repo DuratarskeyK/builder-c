@@ -24,6 +24,8 @@ typedef struct
 } strings_t;
 
 typedef struct {
+	int is_git;
+	char *branch;
 	char *type;
 	char *cmd;
 	uid_t run_as_uid;

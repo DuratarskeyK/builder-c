@@ -62,6 +62,25 @@ child_t *exec_build(const char *distrib_type, char * const *env) {
 		return NULL;
 	}
 
+	if (platform->is_git) {
+		log_printf(LOG_INFO, "Updating build scripts.\n");
+		int len = strlen(update_scripts_cmd) + strlen(builder_config.git_scripts_dir) +
+		          strlen(platform->type) + strlen(platform->branch) + 1;
+		char *update_cmd = xmalloc(len);
+		sprintf(update_cmd, update_scripts_cmd, builder_config.git_scripts_dir, platform->type, platform->branch);
+		char *output;
+		int exit_code = system_with_output(update_cmd, &output);
+		if (exit_code < 0) {
+			log_printf(LOG_ERROR, "Error starting command %s\n", update_cmd);
+		} else if (!WIFEXITED(exit_code) || WEXITSTATUS(exit_code) != 0) {
+			log_printf(LOG_ERROR, "Error updating git scripts. Output:\n%s\n", output);
+		}
+		if (output != NULL) {
+			free(output);
+		}
+		free(update_cmd);
+	}
+
 	char *cmd = xmalloc(strlen(cmd_fmt) + strlen(platform->cmd) + 32);
 	sprintf(cmd, cmd_fmt, platform->cmd, pfd[1], pfd[1]);
 	argv[3] = cmd;

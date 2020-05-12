@@ -10,8 +10,6 @@
 #include <errno.h>
 #include "main.h"
 
-// git pull for scripts before build
-
 int main(int argc, char **argv) {
 	int res, try, retries;
 
