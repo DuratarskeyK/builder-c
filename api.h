@@ -7,10 +7,10 @@
 static int curl_get(const char *, char **);
 static int curl_put(const char *, const char *);
 
-void init_api(const char *url, const char *api_token);
+void init_api(const char *url, const char *tok, const char *qs);
 int api_job_statistics(const char *);
 int api_jobs_logs(const char *, const char *);
-int api_jobs_shift(char **, const char *);
+int api_jobs_shift(char **);
 int api_jobs_feedback(const char *, int, const char *);
 int api_jobs_status(const char *);
 

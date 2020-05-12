@@ -142,7 +142,7 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 
 	free(json);
 
-	(*env)[cur_env++] = strdup("HOME=/home/omv");
+	(*env)[cur_env++] = make_env("HOME", builder_config.work_dir);
 	(*env)[cur_env++] = NULL;
 
 	return cur_env;

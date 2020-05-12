@@ -54,9 +54,6 @@ static void *read_log(__attribute__((unused)) void *arg) {
 		}
 		cur_pos += sprintf(buf + cur_pos, "%s", str);
 		pthread_mutex_unlock(&buf_access);
-		if(stop) {
-			break;
-		}
 	}
 	if(flog != NULL) {
 		fclose(flog);
@@ -85,10 +82,13 @@ int start_live_logger(char *build_id, int read_fd) {
 		return -1;
 	}
 
-	flog = fopen("/tmp/script_output.log", "w");
+	char *script_output_path = xmalloc(strlen(builder_config.work_dir) + 1 + strlen("script_output.log") + 1);
+	sprintf(script_output_path, "%s/script_output.log", builder_config.work_dir);
+	flog = fopen(script_output_path, "w");
 	if (flog == NULL) {
-		log_printf(LOG_ERROR, "Can't open /tmp/script_output.log, error: %s\n", strerror(errno));
+		log_printf(LOG_ERROR, "Can't open %s, error: %s\n", script_output_path, strerror(errno));
 	}
+	free(script_output_path);
 
 	log_read_fd = read_fd;
 	res = pthread_create(&read_log_thread, NULL, &read_log, NULL);

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
+#include <time.h>
 #include "statistics.h"
 
 static char *uid, *last_build_id = NULL;
@@ -18,11 +19,9 @@ static void *statistics(void *arg) {
 	gethostname(hostname, 128);
 
 	register_thread("Statistics");
-	log_printf(LOG_INFO, "Statistics thread started\n");
+	log_printf(LOG_DEBUG, "Statistics thread started\n");
 	while(1) {
 		char *payload;
-		// uid length plus hostname plus busy workers plus \0
-		// 162 = 32 + 128 + 1 + 1
 		size_t len = strlen(API_STATISTICS_PAYLOAD) + 162;
 		if (query_string) {
 			len += strlen(query_string);
@@ -49,9 +48,7 @@ static char char2hex(unsigned char c) {
 	else if(c <= 15) {
 		return 'a' + (c - 10);
 	}
-	else {
-		return '0';
-	}
+	return '0';
 }
 
 void set_busy_status(int s, const char *build_id) {
@@ -72,37 +69,32 @@ void set_busy_status(int s, const char *build_id) {
 }
 
 int start_statistics_thread(const char *query_string) {
-	unsigned char random_data[16];
 	char builder_id[33];
 	int res;
 
-	FILE *dev_random;
-
-	dev_random = fopen("/dev/urandom", "r");
-
-	if(dev_random) {
-		fread(random_data, 16, 1, dev_random);
-		fclose(dev_random);
-		for(int i = 0; i<16; i++) {
-			builder_id[2 * i] = char2hex(random_data[i] & 0x0F);
-			builder_id[2 * i + 1] = char2hex((random_data[i] >> 4) & 0x0F);
-		}
-		builder_id[32] = '\0';
-		uid = strdup(builder_id);
-		log_printf(LOG_INFO, "Builder ID is %s\n", uid);
-
-		pthread_mutex_init(&busy_access, NULL);
-
-		res = pthread_create(&statistics_thread, NULL, &statistics, (void *)query_string);
-
-		if(res) {
-			return -1;
-		}
-
-		return 0;
+	time_t seed = time(NULL);
+	if (seed == -1) {
+		seed = 1;
 	}
-	else {
-		log_printf(LOG_ERROR, "/dev/urandom is inaccessible, can't generate builder ID, error: %s\n", strerror(errno));
+	seed *= getpid();
+	srand(seed);
+
+	for(int i = 0; i<16; i++) {
+		int rnd = rand() % 0xFF;
+		builder_id[2 * i] = char2hex(rnd & 0x0F);
+		builder_id[2 * i + 1] = char2hex((rnd >> 4) & 0x0F);
+	}
+	builder_id[32] = '\0';
+	uid = strdup(builder_id);
+	log_printf(LOG_DEBUG, "Builder ID is %s\n", uid);
+
+	pthread_mutex_init(&busy_access, NULL);
+
+	res = pthread_create(&statistics_thread, NULL, &statistics, (void *)query_string);
+
+	if(res) {
 		return -1;
 	}
+
+	return 0;
 }

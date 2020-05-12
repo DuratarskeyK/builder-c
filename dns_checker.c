@@ -16,14 +16,14 @@ int check_dns() {
 		return -1;
 	}
 
-	log_printf(LOG_INFO, "github.com was resolved to:\n");
+	log_printf(LOG_DEBUG, "github.com was resolved to:\n");
 
 	struct addrinfo *p;
 	char host[256];
 
 	for (p = infoptr; p != NULL; p = p->ai_next) {
 		getnameinfo(p->ai_addr, p->ai_addrlen, host, sizeof (host), NULL, 0, NI_NUMERICHOST);
-		log_printf(LOG_INFO, "%s\n", host);
+		log_printf(LOG_DEBUG, "%s\n", host);
 	}
 
 	freeaddrinfo(infoptr);

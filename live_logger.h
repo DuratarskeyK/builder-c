@@ -4,6 +4,7 @@
 #define LIVE_LOGGER_BUFFER_SIZE 10000
 
 #include "log_levels.h"
+#include "structs.h"
 
 static void *buffer_dump(void *);
 static void *read_log(void *);
@@ -20,5 +21,7 @@ extern void unregister_thread(pthread_t tid);
 extern void log_printf(unsigned int level, const char *message, ...);
 
 extern void *xmalloc(size_t size);
+
+extern builder_config_t builder_config;
 
 #endif

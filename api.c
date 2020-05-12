@@ -7,11 +7,13 @@
 
 static const char *token = NULL;
 static const char *api_url = NULL;
+static const char *query_string = NULL;
 
-void init_api(const char *url, const char *api_token) {
+void init_api(const char *url, const char *tok, const char *qs) {
 	curl_global_init(CURL_GLOBAL_ALL);
-	token = api_token;
+	token = tok;
 	api_url = url;
+	query_string = qs;
 }
 
 static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream) {
@@ -156,7 +158,7 @@ int api_job_statistics(const char *payload) {
 	return 0;
 }
 
-int api_jobs_shift(char **buf, const char *query_string) {
+int api_jobs_shift(char **buf) {
 	char *path;
 	if(api_url == NULL) {
 		return -1;

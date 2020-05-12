@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sched.h>
+#include <errno.h>
 #include "exec_build.h"
 
 // 128 kbytes
@@ -21,42 +22,69 @@ static char *argv[] = {
 static int exec_init(void *arg) {
 	exec_data_t *data = (exec_data_t *)arg;
 
-	setgid(data->omv_mock.mock_gid);
-	setuid(data->omv_mock.omv_uid);
+	if (setgid(data->gid) < 0) {
+		printf("setgid failed");
+		return 255;
+	}
+	if (setuid(data->uid) < 0) {
+		printf("setuid failed\n");
+		return 255;
+	}
 	execvpe("/bin/bash", argv, data->env);
 
 	return 255;
 }
 
-child exec_build(const char *distrib_type, char * const *env, usergroup omv_mock) {
+child_t *exec_build(const char *distrib_type, char * const *env) {
 	pid_t pid;
-	unsigned int *stack = xmalloc(STACK_SIZE);
+
 	int pfd[2];
-	child ret;
-	pipe(pfd);
+	int res = pipe(pfd);
+	if (res < 0) {
+		log_printf(LOG_ERROR, "Error creating pipe: %s\n", strerror(errno));
+		return NULL;
+	}
 
-	// clean output directory
-	system("rm -rf /home/omv/output/*");
-
-	exec_data_t *data = xmalloc(sizeof(exec_data_t));
-	data->env = env;
-	data->omv_mock = omv_mock;
+	unsigned int *stack = xmalloc(STACK_SIZE);
 	unsigned long stack_aligned = ((unsigned long)stack + STACK_SIZE) & (~0xF);
 	stack_aligned -= 0x10;
 
-	char *cmd = xmalloc(strlen(cmd_fmt) + strlen(distrib_type) + 128);
-	sprintf(cmd, cmd_fmt, distrib_type, pfd[1], pfd[1]);
+	builder_t *platform = NULL;
+	for (int i = 0; i < builder_config.builder_scripts_len; i++) {
+		if (!strcmp(builder_config.builder_scripts[i].type, distrib_type)) {
+			platform = &(builder_config.builder_scripts[i]);
+			break;
+		}
+	}
+
+	if (platform == NULL) {
+		log_printf(LOG_ERROR, "No build scripts for platform type %s.\n", distrib_type);
+		return NULL;
+	}
+
+	char *cmd = xmalloc(strlen(cmd_fmt) + strlen(platform->cmd) + 32);
+	sprintf(cmd, cmd_fmt, platform->cmd, pfd[1], pfd[1]);
 	argv[3] = cmd;
 
+	exec_data_t *data = xmalloc(sizeof(exec_data_t));
+	data->env = env;
+	data->uid = platform->run_as_uid;
+	data->gid = platform->run_as_gid;
+
 	pid = clone(exec_init, (unsigned char *)stack_aligned, CLONE_NEWPID | CLONE_NEWNS | SIGCHLD, data);
+	if (pid < 0) {
+		log_printf(LOG_ERROR, "Error starting %s: %s\n", cmd, strerror(errno));
+		return NULL;
+	}
 
 	free(cmd);
 	free(data);
 	free(stack);
 	close(pfd[1]);
 
-	ret.pid = pid;
-	ret.read_fd = pfd[0];
+	child_t *ret = xmalloc(sizeof(child_t));
+	ret->pid = pid;
+	ret->read_fd = pfd[0];
 
 	return ret;
 }
