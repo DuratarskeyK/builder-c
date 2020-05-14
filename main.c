@@ -139,8 +139,17 @@ int main(int argc, char **argv) {
 			commit_hash[40] = '\0';
 		}
 
-		res = system(builder_config.strings.upload_cmd);
-		char *results = read_file("/tmp/results.json");
+		char *results;
+		res = filestore_upload(&results);
+		if (res < 0) {
+			log_printf(LOG_ERROR, "Irrecoverable error encountered when uploading files to file store.\n");
+			exit_code = 255;
+			build_status = BUILD_FAILED;
+			results = xmalloc(3);
+			results[0] = '[';
+			results[1] = ']';
+			results[2] = '\0';
+		}
 
 		char *fail_reason = NULL;
 		if (build_status == BUILD_FAILED) {

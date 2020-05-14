@@ -144,7 +144,7 @@ void log_printf(unsigned int level, const char *message, ...) {
 	va_end(ap);
 
 	if (size < 0) {
-		pthread_mutex_unlock(&logger_access);	
+		pthread_mutex_unlock(&logger_access);
 		free(p);
 		return;
 	}

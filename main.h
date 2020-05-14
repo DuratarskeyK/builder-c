@@ -35,6 +35,8 @@ extern void log_printf(unsigned int level, const char *message, ...);
 
 extern int parse_job_description(const char *, char **, int *, char **, char ***);
 
+extern int filestore_upload(char **results);
+
 extern void *xmalloc(size_t size);
 
 extern builder_config_t builder_config;
