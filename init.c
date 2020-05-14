@@ -325,8 +325,8 @@ static int get_platform_list(config_t *config) {
 	for (int i = 0; i < len; i++) {
 		config_setting_t *platform = config_setting_get_elem(platforms_list, i);
 		char *name = config_setting_name(platform);
-		if (config_setting_type(platforms_list) != CONFIG_TYPE_GROUP) {
-			log_printf(LOG_FATAL, "%s must be a group.\n", name);
+		if (config_setting_type(platform) != CONFIG_TYPE_GROUP) {
+			log_printf(LOG_FATAL, "\"%s\" must be a group.\n", name);
 			return -1;
 		}
 		builder_config.builder_scripts[i].type = strdup(name);
