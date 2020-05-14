@@ -3,6 +3,7 @@
 
 #include "api_data.h"
 #include "log_levels.h"
+#include "structs.h"
 
 static int curl_get(const char *, char **);
 static int curl_put(const char *, const char *);
@@ -14,10 +15,8 @@ int api_jobs_shift(char **);
 int api_jobs_feedback(const char *, int, const char *);
 int api_jobs_status(const char *);
 
-typedef struct {
-	const char *ptr;
-	int offset;
-} mem_t;
+extern size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata);
+extern size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
 
 extern void log_printf(unsigned int level, const char *message, ...);
 

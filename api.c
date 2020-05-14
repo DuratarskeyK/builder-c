@@ -16,45 +16,22 @@ void init_api(const char *url, const char *tok, const char *qs) {
 	query_string = qs;
 }
 
-static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream) {
-	mem_t *c = (mem_t *)stream;
-	size_t offset = c->offset;
-	size_t to_read, retcode;
-
-	to_read = size * nmemb;
-	if(to_read > strlen((char *)c->ptr) - offset) {
-		to_read = strlen((char *)c->ptr) - offset;
-	}
-
-	memcpy(ptr, c->ptr + c->offset, to_read);
-
-	offset += to_read;
-	if(offset > strlen((char *)c->ptr)) {
-		offset = strlen((char *)c->ptr);
-	}
-
-	c->offset = offset;
-	retcode = to_read;
-
-	return retcode;
-}
-
 static int curl_get(const char *url, char **buf) {
 	CURL *curl_handle;
 	CURLcode res;
-	FILE *tmpf;
-	long pos;
 	char errbuf[CURL_ERROR_SIZE];
 	errbuf[0] = 0;
 
 	log_printf(LOG_DEBUG, "libcurl: Starting GET to %s\n", url);
 
-	tmpf = tmpfile();
+	mem_t response;
+	response.ptrs.write_ptr = NULL;
 
 	curl_handle = curl_easy_init();
 
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)tmpf);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_callback);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&response);
 	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errbuf);
@@ -71,22 +48,19 @@ static int curl_get(const char *url, char **buf) {
 		} else {
 			log_printf(LOG_ERROR, "%s\n", curl_easy_strerror(res));
 		}
-		fclose(tmpf);
 		curl_easy_cleanup(curl_handle);
+		*buf = NULL;
+		if (response.ptrs.write_ptr != NULL) {
+			free(response.ptrs.write_ptr);
+		}
 		return 1;
 	}
 	else {
-		fflush(tmpf);
-		pos = ftell(tmpf);
-		log_printf(LOG_DEBUG, "libcurl: Request successful. Received %d bytes.\n", pos);
-		fseek(tmpf, 0, SEEK_SET);
-		*buf = xmalloc((size_t)(pos + 1));
-		fread(*buf, pos, 1, tmpf);
-		(*buf)[pos] = '\0';
-		log_printf(LOG_DEBUG, "Received body: %s\n", *buf);
+		log_printf(LOG_DEBUG, "libcurl: Request successful. Received %d bytes.\n", strlen(response.ptrs.write_ptr));
+		log_printf(LOG_DEBUG, "Received body: %s\n", response.ptrs.write_ptr);
+		*buf = response.ptrs.write_ptr;
 	}
 
-	fclose(tmpf);
 	curl_easy_cleanup(curl_handle);
 	return 0;
 }
@@ -94,7 +68,6 @@ static int curl_get(const char *url, char **buf) {
 static int curl_put(const char *url, const char *buf) {
 	CURL *curl;
 	CURLcode res;
-	mem_t mem;
 	char errbuf[CURL_ERROR_SIZE];
 	errbuf[0] = 0;
 
@@ -107,26 +80,27 @@ static int curl_put(const char *url, const char *buf) {
 
 	curl = curl_easy_init();
 
-	mem.ptr = buf;
+	mem_t mem;
+	mem.ptrs.read_ptr = buf;
 	mem.offset = 0;
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+	curl_easy_setopt(curl, CURLOPT_READDATA, &mem);
 	curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
- 	curl_easy_setopt(curl, CURLOPT_PUT, 1L);
- 	curl_easy_setopt(curl, CURLOPT_URL, url);
- 	curl_easy_setopt(curl, CURLOPT_READDATA, &mem);
- 	curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
- 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
- 	curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)strlen(buf));
+	curl_easy_setopt(curl, CURLOPT_PUT, 1L);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+	curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)strlen(buf));
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 	curl_easy_setopt(curl, CURLOPT_USERNAME, token);
 
- 	res = curl_easy_perform(curl);
+	res = curl_easy_perform(curl);
 	curl_slist_free_all(headers);
 	curl_easy_cleanup(curl);
- 	if(res != CURLE_OK) {
+	if(res != CURLE_OK) {
 		log_printf(LOG_ERROR, "libcurl: There was an error performing request:\n");
 		log_printf(LOG_ERROR, "libcurl: Error code %d\n", res);
 		size_t len = strlen(errbuf);
@@ -135,11 +109,11 @@ static int curl_put(const char *url, const char *buf) {
 		} else {
 			log_printf(LOG_ERROR, "%s\n", curl_easy_strerror(res));
 		}
- 		return 1;
- 	}
+		return 1;
+	}
 	log_printf(LOG_DEBUG, "libcurl: Request successful.\n");
 
- 	return 0;
+	return 0;
 }
 
 int api_job_statistics(const char *payload) {

@@ -9,6 +9,14 @@ typedef struct {
 } li_data;
 
 typedef struct {
+	union {
+		char *write_ptr;
+		const char *read_ptr;
+	} ptrs;
+	int offset;
+} mem_t;
+
+typedef struct {
 	pid_t pid;
 	int read_fd;
 } child_t;
