@@ -20,10 +20,7 @@ int system_with_output(const char *cmd, char **output) {
     }
     if (cnt + 1024 >= max) {
       max += 1024;
-      *output = realloc(*output, max);
-      if (*output == NULL) {
-        return -1;
-      }
+      *output = xrealloc(*output, max);
     }
   }
   (*output)[cnt - 1] = '\0';
