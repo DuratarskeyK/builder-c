@@ -1,5 +1,5 @@
-#ifndef _CONFIG_H
-#define _CONFIG_H
+#ifndef _INIT_H
+#define _INIT_H
 
 #include "log_levels.h"
 #include "structs.h"
