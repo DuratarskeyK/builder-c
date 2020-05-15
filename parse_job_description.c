@@ -148,10 +148,6 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 	return cur_env;
 }
 
-static char *make_env(const char *key, const char *value) {
-	char *res = xmalloc(strlen(key) + strlen(value) + 2);
-
-	sprintf(res, "%s=%s", key, value);
-
-	return res;
+inline static char *make_env(const char *key, const char *value) {
+	return alloc_sprintf("%s=%s", key, value);
 }

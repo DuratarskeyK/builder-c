@@ -15,6 +15,8 @@ extern int api_job_statistics(const char *);
 extern void register_thread(const char *name);
 extern void log_printf(unsigned int level, const char *message, ...);
 
+extern char *alloc_sprintf(const char *message, ...);
+
 extern void *xmalloc(size_t size);
 
 #endif

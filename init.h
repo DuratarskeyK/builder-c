@@ -31,11 +31,9 @@ static const char git_scripts_dir_path[] = "application.builder.git_scripts";
 static const char default_git_scripts_dir[] = "/etc/builder-c";
 
 static const char output_fmt[] = "%s/output";
-static const char hostname_payload_fmt[] = "{\"hostname\":\"%s\"}";
 static const char move_output_cmd_fmt[] = "mv %s/script_output.log %s/script_output.log";
 static const char container_data_path_fmt[] = "%s/container_data.json";
 static const char commit_hash_path_fmt[] = "%s/commit_hash";
-static const char upload_cmd_fmt[] = "/bin/bash /etc/builder-c/filestore_upload.sh %s %s";
 static const char fail_reason_path_fmt[] = "%s/build_fail_reason.log";
 
 static const char platforms_path[] = "application.platforms";
@@ -66,6 +64,8 @@ extern int thread_setup();
 extern int init_logger(const char *level);
 extern void register_thread(const char *name);
 extern void log_printf(unsigned int level, const char *message, ...);
+
+extern char *alloc_sprintf(const char *message, ...);
 
 extern int system_with_output(const char *cmd, char **output);
 

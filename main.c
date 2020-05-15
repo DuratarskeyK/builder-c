@@ -45,9 +45,10 @@ int main(int argc, char **argv) {
 		try = 0;
 		set_busy_status(1, build_id);
 		int build_start_success = 0;
+		char *build_started = alloc_sprintf(build_started_args_fmt, builder_config.strings.hostname, build_id, BUILD_STARTED);
 		while(retries) {
 			log_printf(LOG_INFO, "Try #%d: Sending data to ABF.\n", try + 1);
-			if(!api_jobs_feedback(build_id, BUILD_STARTED, builder_config.strings.hostname_payload)) {
+			if(!api_jobs_feedback(build_started)) {
 				log_printf(LOG_INFO, "Try #%d: Data sent.\n", try + 1);
 				build_start_success = 1;
 				break;
@@ -58,6 +59,7 @@ int main(int argc, char **argv) {
 			sleep(1 << try);
 			try++;
 		}
+		free(build_started);
 
 		if (!build_start_success) {
 			log_printf(LOG_ERROR, "Failed to send build start to ABF, aborting build.\n");
@@ -134,21 +136,14 @@ int main(int argc, char **argv) {
 		res = system(builder_config.strings.move_output_cmd);
 
 		char *container_data = read_file(builder_config.strings.container_data_path);
+		if (container_data == NULL) {
+			container_data = alloc_sprintf("[]");
+		}
 		char *commit_hash = read_file(builder_config.strings.commit_hash_path);
 		if(commit_hash != NULL) {
 			commit_hash[40] = '\0';
-		}
-
-		char *results;
-		res = filestore_upload(&results);
-		if (res < 0) {
-			log_printf(LOG_ERROR, "Irrecoverable error encountered when uploading files to file store.\n");
-			exit_code = 255;
-			build_status = BUILD_FAILED;
-			results = xmalloc(3);
-			results[0] = '[';
-			results[1] = ']';
-			results[2] = '\0';
+		} else {
+			commit_hash = alloc_sprintf("");
 		}
 
 		char *fail_reason = NULL;
@@ -163,16 +158,29 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		char *args = xmalloc((container_data ? strlen(container_data) : 0) + (results ? strlen(results) : 0) + 2048);
-		sprintf(args, build_completed_args_fmt, (results ? results : "[]"), \
-				(container_data ? container_data : "{}"), exit_code, (commit_hash ? commit_hash : ""),
-				(fail_reason ? fail_reason : ""));
+		char *results;
+		res = filestore_upload(&results);
+		if (res < 0) {
+			log_printf(LOG_ERROR, "Irrecoverable error encountered when uploading files to file store.\n");
+			exit_code = 255;
+			build_status = BUILD_FAILED;
+			results = alloc_sprintf("[]");
+			if (fail_reason != NULL) {
+				free(fail_reason);
+			}
+			fail_reason = alloc_sprintf("Irrecoverable error encountered when uploading files to file store.");
+		}
+		if (fail_reason == NULL) {
+			fail_reason = alloc_sprintf("");
+		}
+
+		char *args = alloc_sprintf(build_completed_args_fmt, results, container_data, exit_code, commit_hash, fail_reason, build_id, build_status);
 
 		retries = 5;
 		try = 0;
 		while(retries) {
 			log_printf(LOG_INFO, "Try #%d: Sending data to ABF\n", try + 1);
-			if(!api_jobs_feedback(build_id, build_status, args)) {
+			if(!api_jobs_feedback(args)) {
 				log_printf(LOG_INFO, "Data sent.\n");
 				break;
 			} else {
@@ -187,18 +195,10 @@ int main(int argc, char **argv) {
 		free(args);
 		free(build_id);
 
-		if(commit_hash) {
-			free(commit_hash);
-		}
-		if(results) {
-			free(results);
-		}
-		if(container_data) {
-			free(container_data);
-		}
-		if(fail_reason) {
-			free(fail_reason);
-		}
+		free(commit_hash);
+		free(results);
+		free(container_data);
+		free(fail_reason);
 	}
 
 	return 0;

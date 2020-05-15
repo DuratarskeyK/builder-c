@@ -23,7 +23,7 @@ static int exec_init(void *arg) {
 	exec_data_t *data = (exec_data_t *)arg;
 
 	if (setgid(data->gid) < 0) {
-		printf("setgid failed");
+		printf("setgid failed\n");
 		return 255;
 	}
 	if (setuid(data->uid) < 0) {
@@ -64,10 +64,7 @@ child_t *exec_build(const char *distrib_type, char * const *env) {
 
 	if (platform->is_git) {
 		log_printf(LOG_INFO, "Updating build scripts.\n");
-		int len = strlen(update_scripts_cmd) + strlen(builder_config.git_scripts_dir) +
-		          strlen(platform->type) + strlen(platform->branch) + 1;
-		char *update_cmd = xmalloc(len);
-		sprintf(update_cmd, update_scripts_cmd, builder_config.git_scripts_dir, platform->type, platform->branch);
+		char *update_cmd = alloc_sprintf(update_scripts_cmd, builder_config.git_scripts_dir, platform->type, platform->branch);
 		char *output;
 		int exit_code = system_with_output(update_cmd, &output);
 		if (exit_code < 0) {
@@ -81,8 +78,7 @@ child_t *exec_build(const char *distrib_type, char * const *env) {
 		free(update_cmd);
 	}
 
-	char *cmd = xmalloc(strlen(cmd_fmt) + strlen(platform->cmd) + 32);
-	sprintf(cmd, cmd_fmt, platform->cmd, pfd[1], pfd[1]);
+	char *cmd = alloc_sprintf(cmd_fmt, platform->cmd, pfd[1], pfd[1]);
 	argv[3] = cmd;
 
 	exec_data_t *data = xmalloc(sizeof(exec_data_t));

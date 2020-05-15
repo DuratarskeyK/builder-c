@@ -19,6 +19,8 @@ extern void *xmalloc(size_t size);
 
 extern int system_with_output(const char *cmd, char **output);
 
+extern char *alloc_sprintf(const char *message, ...);
+
 extern void log_printf(unsigned int level, const char *message, ...);
 
 extern builder_config_t builder_config;

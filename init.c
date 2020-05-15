@@ -24,10 +24,10 @@ int init(char *config_path) {
 	}
 	config_init(&config);
 	if(!config_read(&config, config_file)) {
-		printf("Fatal: Error parsing config file:\n");
+		printf("FATAL: Error parsing config file:\n");
 		int line = config_error_line(&config);
 		const char *text = config_error_text(&config);
-		printf("Fatal: Line #%d: %s.\n", line, text);
+		printf("FATAL: Line #%d: %s.\n", line, text);
 		config_destroy(&config);
 		goto err;
 	}
@@ -44,7 +44,7 @@ int init(char *config_path) {
 		}
 	}
 	if (init_logger(log_level) < 0) {
-		printf("Fatal: Failed to initialize logger.\n");
+		printf("FATAL: Failed to initialize logger.\n");
 		goto err;
 	}
 	register_thread("Main");
@@ -239,8 +239,7 @@ static int init_strings(config_t *config) {
 		closedir(test);
 	}
 
-	builder_config.output_dir = xmalloc(strlen(output_fmt) + strlen(builder_config.work_dir));
-	sprintf(builder_config.output_dir, output_fmt, builder_config.work_dir);
+	builder_config.output_dir = alloc_sprintf(output_fmt, builder_config.work_dir);
 
 	log_printf(LOG_DEBUG, "Work directory is %s\n", builder_config.work_dir);
 	log_printf(LOG_DEBUG, "Output directory is %s\n", builder_config.output_dir);
@@ -273,36 +272,20 @@ static int init_strings(config_t *config) {
 	if(gethostname(hostname, 128) < 0) {
 		hostname[127] = '\0';
 	}
-	char *tmp;
-	tmp = xmalloc(strlen(hostname) + strlen(hostname_payload_fmt) + 1);
-	sprintf(tmp, hostname_payload_fmt, hostname);
-	log_printf(LOG_DEBUG, "hostname_payload is %s\n", tmp);
-	builder_config.strings.hostname_payload = tmp;
+	builder_config.strings.hostname = strdup(hostname);
+	log_printf(LOG_DEBUG, "hostname is %s\n", builder_config.strings.hostname);
 
-	tmp = xmalloc(strlen(move_output_cmd_fmt) + strlen(builder_config.work_dir) + strlen(builder_config.output_dir) + 1);
-	sprintf(tmp, move_output_cmd_fmt, builder_config.work_dir, builder_config.output_dir);
-	log_printf(LOG_DEBUG, "move_output_cmd is %s\n", tmp);
-	builder_config.strings.move_output_cmd = tmp;
+	builder_config.strings.move_output_cmd = alloc_sprintf(move_output_cmd_fmt, builder_config.work_dir, builder_config.output_dir);
+	log_printf(LOG_DEBUG, "move_output_cmd is %s\n", builder_config.strings.move_output_cmd);
 
-	tmp = xmalloc(strlen(container_data_path_fmt) + strlen(builder_config.output_dir) + 1);
-	sprintf(tmp, container_data_path_fmt, builder_config.output_dir);
-	log_printf(LOG_DEBUG, "container_data_path is %s\n", tmp);
-	builder_config.strings.container_data_path = tmp;
+	builder_config.strings.container_data_path = alloc_sprintf(container_data_path_fmt, builder_config.output_dir);
+	log_printf(LOG_DEBUG, "container_data_path is %s\n", builder_config.strings.container_data_path);
 
-	tmp = xmalloc(strlen(upload_cmd_fmt) + strlen(builder_config.api_token) + strlen(builder_config.output_dir) + 1);
-	sprintf(tmp, upload_cmd_fmt, builder_config.api_token, builder_config.output_dir);
-	log_printf(LOG_DEBUG, "upload_cmd is %s\n", tmp);
-	builder_config.strings.upload_cmd = tmp;
+	builder_config.strings.commit_hash_path = alloc_sprintf(commit_hash_path_fmt, builder_config.work_dir);
+	log_printf(LOG_DEBUG, "commit_hash_path is %s\n", builder_config.strings.commit_hash_path);
 
-	tmp = xmalloc(strlen(commit_hash_path_fmt) + strlen(builder_config.work_dir) + 1);
-	sprintf(tmp, commit_hash_path_fmt, builder_config.work_dir);
-	log_printf(LOG_DEBUG, "commit_hash_path is %s\n", tmp);
-	builder_config.strings.commit_hash_path = tmp;
-
-	tmp = xmalloc(strlen(fail_reason_path_fmt) + strlen(builder_config.work_dir) + 1);
-	sprintf(tmp, fail_reason_path_fmt, builder_config.work_dir);
-	log_printf(LOG_DEBUG, "fail_reason_path is %s\n", tmp);
-	builder_config.strings.fail_reason_path = tmp;
+	builder_config.strings.fail_reason_path = alloc_sprintf(fail_reason_path_fmt, builder_config.work_dir);
+	log_printf(LOG_DEBUG, "fail_reason_path is %s\n", builder_config.strings.fail_reason_path);
 
 	return 0;
 }
@@ -347,8 +330,7 @@ static int get_platform_list(config_t *config) {
 			if (load_scripts(git, branch, name) < 0) {
 				return -1;
 			}
-			platform_path = xmalloc(strlen(builder_config.git_scripts_dir) + strlen(name) + 2);
-			sprintf(platform_path, "%s/%s", builder_config.git_scripts_dir, name);
+			platform_path = alloc_sprintf("%s/%s", builder_config.git_scripts_dir, name);
 			builder_config.builder_scripts[i].is_git = 1;
 			builder_config.builder_scripts[i].branch = strdup(branch);
 		} else if(!git_exists && path_exists) {
@@ -368,15 +350,13 @@ static int get_platform_list(config_t *config) {
 		if (!interpreter_exists) {
 			interpreter = default_interpreter;
 		}
-		char *script_path = xmalloc(strlen(platform_path) + 1 + strlen(script_name) + 1);
-		sprintf(script_path, "%s/%s", platform_path, script_name);
+		char *script_path = alloc_sprintf("%s/%s", platform_path, script_name);
 		char *real_script_path = realpath(script_path, NULL);
 		if (!real_script_path) {
 			log_printf(LOG_FATAL, "Path %s: %s\n", script_path, strerror(errno));
 			return -1;
 		}
-		char *cmd = xmalloc(strlen(interpreter) + 1 + strlen(real_script_path) + 1);
-		sprintf(cmd, "%s %s", interpreter, real_script_path);
+		char *cmd = alloc_sprintf("%s %s", interpreter, real_script_path);
 		builder_config.builder_scripts[i].cmd = cmd;
 		free(script_path);
 		free(real_script_path);
@@ -410,13 +390,9 @@ static int get_platform_list(config_t *config) {
 }
 
 static int load_scripts(const char *git_repo, const char *git_branch, const char *platform_type) {
-  size_t len = strlen(clone_cmd) + strlen(builder_config.git_scripts_dir) + strlen(git_repo) + strlen(git_branch) + strlen(platform_type);
-	char *cmd = xmalloc(len);
-	int res;
-
-	sprintf(cmd, clone_cmd, builder_config.git_scripts_dir, platform_type, git_branch, git_repo, platform_type);
+	char *cmd = alloc_sprintf(clone_cmd, builder_config.git_scripts_dir, platform_type, git_branch, git_repo, platform_type);
   char *output;
-	res = system_with_output(cmd, &output);
+	int res = system_with_output(cmd, &output);
 	if (res < 0) {
 		log_printf(LOG_FATAL, "Failed to start command %s.\n", cmd);
 		if (output != NULL) {

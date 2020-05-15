@@ -21,19 +21,10 @@ static void *statistics(void *arg) {
 	register_thread("Statistics");
 	log_printf(LOG_DEBUG, "Statistics thread started\n");
 	while(1) {
-		char *payload;
-		size_t len = strlen(API_STATISTICS_PAYLOAD) + 162;
-		if (query_string) {
-			len += strlen(query_string);
-		}
-		if (last_build_id) {
-			len += strlen(last_build_id);
-		}
-		payload = xmalloc(len);
 		pthread_mutex_lock(&busy_access);
-		sprintf(payload, API_STATISTICS_PAYLOAD, uid, is_busy, hostname, (query_string ? query_string : ""), (last_build_id == NULL ? "" : last_build_id));
-		pthread_mutex_unlock(&busy_access);
+		char *payload = alloc_sprintf(API_STATISTICS_PAYLOAD, uid, is_busy, hostname, (query_string ? query_string : ""), (last_build_id == NULL ? "" : last_build_id));
 		api_job_statistics(payload);
+		pthread_mutex_unlock(&busy_access);
 		free(payload);
 		sleep(10);
 	}

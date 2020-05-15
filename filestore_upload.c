@@ -32,8 +32,7 @@ int filestore_upload(char **results) {
 			}
 			break;
 		}
-		char *filename = xmalloc(strlen(entry->d_name) + 1 + strlen(builder_config.output_dir) + 1);
-		sprintf(filename, "%s/%s", builder_config.output_dir, entry->d_name);
+		char *filename = alloc_sprintf("%s/%s", builder_config.output_dir, entry->d_name);
 		struct stat fileinfo;
 		if(stat(filename, &fileinfo) < 0) {
 			free(res);
@@ -78,7 +77,7 @@ static void upload_file(const char *name, off_t size, const char *path, char **j
 	errbuf[0] = '\0';
 
 	for (int try = 0; try < RETRIES; try++) {
-		log_printf(LOG_INFO, "Try %d. Uploading file %s\n", try + 1, path);
+		log_printf(LOG_INFO, "Try %d: Uploading file %s\n", try + 1, path);
 		curl = curl_easy_init();
 
 		form = curl_mime_init(curl);
@@ -138,7 +137,7 @@ static void upload_file(const char *name, off_t size, const char *path, char **j
 		} else {
 			char *resp = response.ptrs.write_ptr;
 			if (strlen(name) >= 4 && !strcmp(name + strlen(name) - 4, ".rpm")) {
-				log_printf(LOG_INFO, "Try %d. File uploaded.\n", try + 1);
+				log_printf(LOG_INFO, "Try %d: File uploaded.\n", try + 1);
 				free(resp);
 				return;
 			}
@@ -160,7 +159,7 @@ static void upload_file(const char *name, off_t size, const char *path, char **j
 			}
 			*end = '\0';
 			*json = alloc_sprintf(file_line, start + to_add, name, size / MEGABYTE);
-			log_printf(LOG_INFO, "Try %d. File uploaded.\n", try + 1);
+			log_printf(LOG_INFO, "Try %d: File uploaded.\n", try + 1);
 			log_printf(LOG_DEBUG, "Resulting json: %s\n", *json);
 			return;
 		}

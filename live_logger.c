@@ -15,8 +15,7 @@ static pthread_mutex_t buf_access;
 
 static void *buffer_dump(void *arg) {
 	char *build_id = (char *)arg;
-	char *key = xmalloc(strlen(build_id) + strlen("abfworker::rpm-worker-") + 1);
-	sprintf(key, "abfworker::rpm-worker-%s", build_id);
+	char *key = alloc_sprintf("abfworker::rpm-worker-%s", build_id);
 
 	register_thread("Livelogger");
 	while(!stop) {
@@ -82,8 +81,7 @@ int start_live_logger(char *build_id, int read_fd) {
 		return -1;
 	}
 
-	char *script_output_path = xmalloc(strlen(builder_config.work_dir) + 1 + strlen("script_output.log") + 1);
-	sprintf(script_output_path, "%s/script_output.log", builder_config.work_dir);
+	char *script_output_path = alloc_sprintf("%s/script_output.log", builder_config.work_dir);
 	flog = fopen(script_output_path, "w");
 	if (flog == NULL) {
 		log_printf(LOG_ERROR, "Can't open %s, error: %s\n", script_output_path, strerror(errno));

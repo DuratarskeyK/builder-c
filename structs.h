@@ -23,10 +23,9 @@ typedef struct {
 
 typedef struct
 {
-	char *hostname_payload;
+	char *hostname;
 	char *move_output_cmd;
 	char *container_data_path;
-	char *upload_cmd;
 	char *commit_hash_path;
 	char *fail_reason_path;
 } strings_t;

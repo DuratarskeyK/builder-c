@@ -18,9 +18,12 @@ char *alloc_sprintf(const char *message, ...) {
 
 	va_start(ap, message);
   size = vsnprintf(res, size, message, ap);
+  // this should never happen in my use cases, I think
+  // I hope, I pray to Yog-Sothoth every day
   if (size < 0) {
-    free(res);
-    return NULL;
+    res = xrealloc(res, 1);
+    res[0] = '\0';
+    return res;
   }
   va_end(ap);
 
