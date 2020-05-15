@@ -101,14 +101,14 @@ static int get_api_info(config_t *config) {
 		log_printf(LOG_FATAL, "%s must be set.\n", api_url_path);
 		return -1;
 	}
-	builder_config.abf_api_url = strdup(tmp);
+	builder_config.abf_api_url = xstrdup(tmp);
 
 	req_res = config_lookup_string(config, file_store_url_path, (const char **)&tmp);
 	if(!req_res) {
 		log_printf(LOG_FATAL, "%s must be set.\n", file_store_url_path);
 		return -1;
 	}
-	builder_config.file_store_url = strdup(tmp);
+	builder_config.file_store_url = xstrdup(tmp);
 
 	req_res = config_lookup_string(config, build_token_path, (const char **)&tmp);
 	if(!req_res) {
@@ -118,7 +118,7 @@ static int get_api_info(config_t *config) {
 			return -1;
 		}
 	}
-	builder_config.api_token = strdup(tmp);
+	builder_config.api_token = xstrdup(tmp);
 
 	return 0;
 }
@@ -134,7 +134,7 @@ static int get_query_string(config_t *config) {
 	if(!supported_arches_exist) {
 		tmp = getenv(supported_arches_env);
 		if(tmp != NULL) {
-			arches = strdup(tmp);
+			arches = xstrdup(tmp);
 			supported_arches_exist = 1;
 		}
 	}
@@ -146,7 +146,7 @@ static int get_query_string(config_t *config) {
 	if(!native_arches_exist) {
 		tmp = getenv(native_arches_env);
 		if(tmp != NULL) {
-			native_arches = strdup(tmp);
+			native_arches = xstrdup(tmp);
 			native_arches_exist = 1;
 		}
 	}
@@ -158,7 +158,7 @@ static int get_query_string(config_t *config) {
 	if(!supported_platforms_exist) {
 		tmp = getenv(supported_platforms_env);
 		if(tmp != NULL) {
-			platforms = strdup(tmp);
+			platforms = xstrdup(tmp);
 			supported_platforms_exist = 1;
 		}
 	}
@@ -170,7 +170,7 @@ static int get_query_string(config_t *config) {
 	if(!supported_platform_types_exist) {
 		tmp = getenv(supported_platform_types_env);
 		if(tmp != NULL) {
-			platform_types = strdup(tmp);
+			platform_types = xstrdup(tmp);
 			supported_platform_types_exist = 1;
 		}
 	}
@@ -224,12 +224,12 @@ static int init_strings(config_t *config) {
 		(const char **)&work_dir
 	);
 	if (!work_dir_exists) {
-		builder_config.work_dir = strdup(default_work_dir);
+		builder_config.work_dir = xstrdup(default_work_dir);
 	} else {
 		if (work_dir[strlen(work_dir) - 1] == '/') {
 			work_dir[strlen(work_dir) - 1] = '\0';
 		}
-		builder_config.work_dir = strdup(work_dir);
+		builder_config.work_dir = xstrdup(work_dir);
 	}
 	test = opendir(builder_config.work_dir);
 	if (test == NULL) {
@@ -250,12 +250,12 @@ static int init_strings(config_t *config) {
 		(const char **)&git_scripts_dir
 	);
 	if (!git_scripts_dir_exists) {
-		builder_config.git_scripts_dir = strdup(default_git_scripts_dir);
+		builder_config.git_scripts_dir = xstrdup(default_git_scripts_dir);
 	} else {
 		if (git_scripts_dir[strlen(git_scripts_dir) - 1] == '/') {
 			git_scripts_dir[strlen(git_scripts_dir) - 1] = '\0';
 		}
-		builder_config.git_scripts_dir = strdup(git_scripts_dir);
+		builder_config.git_scripts_dir = xstrdup(git_scripts_dir);
 	}
 
 	test = opendir(builder_config.git_scripts_dir);
@@ -272,7 +272,7 @@ static int init_strings(config_t *config) {
 	if(gethostname(hostname, 128) < 0) {
 		hostname[127] = '\0';
 	}
-	builder_config.strings.hostname = strdup(hostname);
+	builder_config.strings.hostname = xstrdup(hostname);
 	log_printf(LOG_DEBUG, "hostname is %s\n", builder_config.strings.hostname);
 
 	builder_config.strings.move_output_cmd = alloc_sprintf(move_output_cmd_fmt, builder_config.work_dir, builder_config.output_dir);
@@ -312,7 +312,7 @@ static int get_platform_list(config_t *config) {
 			log_printf(LOG_FATAL, "\"%s\" must be a group.\n", name);
 			return -1;
 		}
-		builder_config.builder_scripts[i].type = strdup(name);
+		builder_config.builder_scripts[i].type = xstrdup(name);
 		const char *git, *path;
 		int git_exists = config_setting_lookup_string(platform, "git", &git);
 		int path_exists = config_setting_lookup_string(platform, "path", &path);
@@ -332,9 +332,9 @@ static int get_platform_list(config_t *config) {
 			}
 			platform_path = alloc_sprintf("%s/%s", builder_config.git_scripts_dir, name);
 			builder_config.builder_scripts[i].is_git = 1;
-			builder_config.builder_scripts[i].branch = strdup(branch);
+			builder_config.builder_scripts[i].branch = xstrdup(branch);
 		} else if(!git_exists && path_exists) {
-			platform_path = strdup(path);
+			platform_path = xstrdup(path);
 			builder_config.builder_scripts[i].is_git = 0;
 		} else {
 			log_printf(LOG_FATAL, "Platform %s: One of git, path is expected.\n", name);

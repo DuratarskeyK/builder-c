@@ -134,7 +134,9 @@ int main(int argc, char **argv) {
 		log_printf(LOG_INFO, "Build is over with status %s.\n", build_statuses_str[build_status]);
 
 		res = system(builder_config.strings.move_output_cmd);
-
+		if (res != 0) {
+			log_printf(LOG_ERROR, "script_output.log mv failed.\n");
+		}
 		char *container_data = read_file(builder_config.strings.container_data_path);
 		if (container_data == NULL) {
 			container_data = alloc_sprintf("[]");

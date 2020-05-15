@@ -12,6 +12,8 @@ extern void *xmalloc(size_t size);
 
 extern char *alloc_sprintf(const char *message, ...);
 
+extern char *xstrndup(const char *s, size_t n);
+
 extern builder_config_t builder_config;
 
 #endif

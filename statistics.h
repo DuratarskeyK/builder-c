@@ -17,6 +17,8 @@ extern void log_printf(unsigned int level, const char *message, ...);
 
 extern char *alloc_sprintf(const char *message, ...);
 
+extern char *xstrdup(const char *s);
+
 extern void *xmalloc(size_t size);
 
 #endif

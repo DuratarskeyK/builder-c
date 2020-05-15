@@ -54,7 +54,7 @@ void set_busy_status(int s, const char *build_id) {
 		if (last_build_id != NULL) {
 			free(last_build_id);
 		}
-		last_build_id = strdup(build_id);
+		last_build_id = xstrdup(build_id);
 	}
 	pthread_mutex_unlock(&busy_access);
 }
@@ -76,7 +76,7 @@ int start_statistics_thread(const char *query_string) {
 		builder_id[2 * i + 1] = char2hex((rnd >> 4) & 0x0F);
 	}
 	builder_id[32] = '\0';
-	uid = strdup(builder_id);
+	uid = xstrdup(builder_id);
 	log_printf(LOG_DEBUG, "Builder ID is %s\n", uid);
 
 	pthread_mutex_init(&busy_access, NULL);

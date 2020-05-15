@@ -69,6 +69,8 @@ extern char *alloc_sprintf(const char *message, ...);
 
 extern int system_with_output(const char *cmd, char **output);
 
+extern char *xstrdup(const char *s);
+
 extern void *xmalloc(size_t size);
 
 #endif

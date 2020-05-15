@@ -55,15 +55,15 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 		int param_len = json[i].end - json[i].start;
 		const char *start = &js[json[i].start];
 		if(COMPARE(start, "id", param_len)) {
-			*build_id = strndup(&js[json[i+1].start], json[i+1].end-json[i+1].start);
+			*build_id = xstrndup(&js[json[i+1].start], json[i+1].end-json[i+1].start);
 			i += 2;
 		}
 		else if(COMPARE(start, "distrib_type", param_len)) {
-			*distrib_type = strndup(&js[json[i+1].start], json[i+1].end-json[i+1].start);
+			*distrib_type = xstrndup(&js[json[i+1].start], json[i+1].end-json[i+1].start);
 			i += 2;
 		}
 		else if(COMPARE(start, "time_living", param_len)) {
-			char *t = strndup(&js[json[i+1].start], json[i+1].end-json[i+1].start);
+			char *t = xstrndup(&js[json[i+1].start], json[i+1].end-json[i+1].start);
 			*ttl = atoi(t);
 			free(t);
 			i+=2;
@@ -73,12 +73,12 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 			i += 2;
 
 			for(j = 0; j < cmd_params_len; j++, i+=2, cur_env++) {
-				char *key = strndup(&js[json[i].start], json[i].end - json[i].start);
+				char *key = xstrndup(&js[json[i].start], json[i].end - json[i].start);
 				if(json[i+1].type == JSMN_PRIMITIVE && js[json[i+1].start] == 'n') {
 					(*env)[j] = make_env(key, "");
 				}
 				else {
-					char *value = strndup(&js[json[i+1].start], json[i+1].end - json[i+1].start);
+					char *value = xstrndup(&js[json[i+1].start], json[i+1].end - json[i+1].start);
 					(*env)[j] = make_env(key, value);
 					free(value);
 				}
@@ -94,7 +94,7 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 
 			int f = 0;
 			for(j = 0; j < 2 * repos_len; j++, i++) {
-				char *t = strndup(&js[json[i].start], json[i].end - json[i].start);
+				char *t = xstrndup(&js[json[i].start], json[i].end - json[i].start);
 				if(!f) {
 					prn += sprintf(prn, "%s ", t);
 					f = 1;
@@ -113,13 +113,13 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 			cur_env += 2;
 		}
 		else if(COMPARE(start, "uname", param_len)) {
-			char *t = strndup(&js[json[i+1].start], json[i+1].end - json[i+1].start);
+			char *t = xstrndup(&js[json[i+1].start], json[i+1].end - json[i+1].start);
 			(*env)[cur_env++] = make_env("UNAME", t);
 			free(t);
 			i += 2;
 		}
 		else if(COMPARE(start, "email", param_len)) {
-			char *t = strndup(&js[json[i+1].start], json[i+1].end - json[i+1].start);
+			char *t = xstrndup(&js[json[i+1].start], json[i+1].end - json[i+1].start);
 			(*env)[cur_env++] = make_env("EMAIL", t);
 			free(t);
 			i += 2;
@@ -129,7 +129,7 @@ int parse_job_description(const char *js, char **build_id, int *ttl, char **dist
 			i += 2;
 			for(j = 0; j<platform_len; i+=2, j++) {
 				if(COMPARE(&js[json[i].start], "arch", json[i].end-json[i].start)) {
-					char *t = strndup(&js[json[i+1].start], json[i+1].end-json[i+1].start);
+					char *t = xstrndup(&js[json[i+1].start], json[i+1].end-json[i+1].start);
 					(*env)[cur_env++] = make_env("PLATFORM_ARCH", t);
 					free(t);
 				}
