@@ -53,7 +53,7 @@ static int curl_get(const char *url, char **buf) {
 		if (response.ptrs.write_ptr != NULL) {
 			free(response.ptrs.write_ptr);
 		}
-		return 1;
+		return -1;
 	}
 	else {
 		log_printf(LOG_DEBUG, "libcurl: Request successful. Received %d bytes.\n", strlen(response.ptrs.write_ptr));
@@ -109,7 +109,7 @@ static int curl_put(const char *url, const char *buf) {
 		} else {
 			log_printf(LOG_ERROR, "%s\n", curl_easy_strerror(res));
 		}
-		return 1;
+		return -1;
 	}
 	log_printf(LOG_DEBUG, "libcurl: Request successful.\n");
 
@@ -119,7 +119,7 @@ static int curl_put(const char *url, const char *buf) {
 int api_job_statistics(const char *payload) {
 	char *path = alloc_sprintf("%s%s", api_url, API_JOBS_STATISTICS);
 
-	if(curl_put(path, payload)) {
+	if(curl_put(path, payload) < 0) {
 		free(path);
 		return -1;
 	}
@@ -142,7 +142,7 @@ int api_jobs_shift(char **buf) {
 		path = alloc_sprintf("%s%s", api_url, API_JOBS_SHIFT);
 	}
 
-	if(curl_get(path, buf)) {
+	if(curl_get(path, buf) < 0) {
 		free(path);
 		return -1;
 	}
@@ -160,7 +160,7 @@ int api_jobs_status(const char *build_id) {
 
 	char *ret;
 
-	if(curl_get(path, &ret)) {
+	if(curl_get(path, &ret) < 0) {
 		return 0;
 	}
 
@@ -185,7 +185,11 @@ int api_jobs_feedback(const char *buf) {
 
 	char *path = alloc_sprintf("%s%s", api_url, API_JOBS_FEEDBACK);
 	char *final_send = alloc_sprintf("{\"worker_queue\":\"%s\",\"worker_class\":\"%s\",\"worker_args\":[%s]}", OBSERVER_QUEUE, OBSERVER_CLASS, buf);
-	curl_put(path, final_send);
+	if(curl_put(path, final_send) < 0) {
+		free(final_send);
+		free(path);
+		return -1;
+	}
 	free(final_send);
 	free(path);
 	return 0;
