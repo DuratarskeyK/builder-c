@@ -178,15 +178,15 @@ int main(int argc, char **argv) {
 
 		char *args = alloc_sprintf(build_completed_args_fmt, results, container_data, exit_code, commit_hash, fail_reason, build_id, build_status);
 
-		retries = 5;
+		retries = 8;
 		try = 0;
 		while(retries) {
 			log_printf(LOG_INFO, "Try #%d: Sending data to ABF\n", try + 1);
 			if(!api_jobs_feedback(args)) {
-				log_printf(LOG_INFO, "Data sent.\n");
+				log_printf(LOG_INFO, "Try #%d: Data sent.\n", try + 1);
 				break;
 			} else {
-				log_printf(LOG_ERROR, "Failed to send data to ABF. Sleeping for %d seconds and retrying...\n", 1 << try);
+				log_printf(LOG_ERROR, "Try #%d: Failed to send data to ABF. Sleeping for %d seconds and retrying...\n", try + 1, 1 << try);
 			}
 			retries--;
 			sleep(1 << try);

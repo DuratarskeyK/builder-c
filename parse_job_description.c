@@ -5,25 +5,21 @@
 #include "parse_job_description.h"
 
 int parse_job_description(const char *js, char **build_id, int *ttl, char **distrib_type, char ***env) {
-	jsmn_parser json_parser;
-	jsmntok_t *json;
 	int res;
 
-	jsmn_init(&json_parser);
-
-	res = jsmn_parse(&json_parser, js, strlen(js), NULL, 0);
-
-	if(res > 0) {
-		json = xmalloc(res * sizeof(jsmntok_t));
-		jsmn_init(&json_parser);
-		res = jsmn_parse(&json_parser, js, strlen(js), json, res);
-	}
-	else {
+	res = count_json_tokens(js, strlen(js));;
+	if (res <= 0) {
 		return -1;
 	}
 
-	int i;
+	jsmn_parser json_parser;
+	jsmntok_t *json;
 
+	json = xmalloc(res * sizeof(jsmntok_t));
+	jsmn_init(&json_parser);
+	res = jsmn_parse(&json_parser, js, strlen(js), json, res);
+
+	int i;
 	for(i = 0; i<res; i++) {
 		if(!strncmp(&js[json[i].start], "worker_args", strlen("worker_args")) && json[i+2].type == JSMN_OBJECT) {
 			break;
