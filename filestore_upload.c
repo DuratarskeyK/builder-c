@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <curl/curl.h>
 #include "filestore_upload.h"
+#include "jsmn.h"
 
 int filestore_upload(char **results) {
 	DIR *output_dir = opendir(builder_config.output_dir);
@@ -144,24 +145,66 @@ static void upload_file(const char *name, off_t size, const char *path, char **j
 				free(resp);
 				return;
 			}
-			int to_add = 0;
-			char *start, *end;
-			if (code == 201) {
-				start = strstr(resp, ":\"");
-				to_add = 2;
-				end = strchr(start + 2, '"');
-			} else {
-				start = strchr(resp, '\'');
-				to_add = 1;
-				end = strchr(start + 1, '\'');
-			}
-			if (start == NULL || end == NULL) {
-				log_printf(LOG_ERROR, "Should never happen but happened anyway, wtf: %s\n", resp);
+			int cnt = count_json_tokens(resp, strlen(resp));
+			if (cnt <= 0) {
+				log_printf(LOG_ERROR, "Received invalid json: %s\n", resp);
 				free(resp);
 				continue;
 			}
-			*end = '\0';
-			*json = alloc_sprintf(file_line, start + to_add, name, size / MEGABYTE);
+			jsmn_parser json_parser;
+			jsmntok_t *json_tok = NULL;
+
+			json_tok = xmalloc(cnt * sizeof(jsmntok_t));
+			jsmn_init(&json_parser);
+			cnt = jsmn_parse(&json_parser, resp, strlen(resp), json_tok, cnt);
+
+			if (json_tok[0].type != JSMN_OBJECT) {
+				log_printf(LOG_ERROR, "Received invalid json: %s\n", resp);
+				free(json_tok);
+				free(resp);
+				continue;
+			}
+
+			int found_hash = 0;
+			int hash_pos;
+			for (hash_pos = 1; hash_pos < cnt; hash_pos++) {
+				if (!strncmp(&resp[json_tok[hash_pos].start], "sha1_hash", strlen("sha1_hash"))) {
+					found_hash = 1;
+					break;
+				}
+			}
+
+			if (!found_hash) {
+				log_printf(LOG_ERROR, "sha1_sum not found in the response json: %s\n", resp);
+				free(json_tok);
+				free(resp);
+				continue;
+			}
+			if (json_tok[hash_pos + 1].type == JSMN_ARRAY) {
+				hash_pos += 2;
+			} else {
+				hash_pos += 1;
+			}
+			char *hash_value = xstrndup(&resp[json_tok[hash_pos].start], json_tok[hash_pos].end - json_tok[hash_pos].start);
+			char *hash;
+			if (hash_value[0] == '\'') {
+				hash = hash_value + 1;
+				char *end = strchr(hash, '\'');
+				if (end == NULL) {
+					log_printf(LOG_ERROR, "This should never happen: %s\n", hash_value);
+					free(json_tok);
+					free(resp);
+					free(hash_value);
+					continue;
+				}
+				*end = '\0';
+			} else {
+				hash = hash_value;
+			}
+			*json = alloc_sprintf(file_line, hash, name, size / MEGABYTE);
+			free(json_tok);
+			free(resp);
+			free(hash_value);
 			log_printf(LOG_INFO, "Try %d: File uploaded.\n", try + 1);
 			log_printf(LOG_DEBUG, "Resulting json: %s\n", *json);
 			return;

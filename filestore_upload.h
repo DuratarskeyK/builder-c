@@ -22,5 +22,6 @@ extern char *alloc_sprintf(const char *message, ...);
 
 extern void *xmalloc(size_t size);
 extern void *xrealloc(void *ptr, size_t size);
+extern char *xstrndup(const char *s, size_t n);
 
 #endif
