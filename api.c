@@ -17,7 +17,7 @@ void init_api(const char *url, const char *tok, const char *qs) {
 }
 
 static int curl_get(const char *url, char **buf) {
-	CURL *curl_handle;
+	CURL *curl;
 	CURLcode res;
 	char errbuf[CURL_ERROR_SIZE];
 	errbuf[0] = 0;
@@ -27,18 +27,21 @@ static int curl_get(const char *url, char **buf) {
 	mem_t response;
 	response.ptrs.write_ptr = NULL;
 
-	curl_handle = curl_easy_init();
+	curl = curl_easy_init();
 
-	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_callback);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&response);
-	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errbuf);
-	curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1L);
-	curl_easy_setopt(curl_handle, CURLOPT_USERNAME, token);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&response);
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+	curl_easy_setopt(curl, CURLOPT_USERNAME, token);
+	curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 128L);
+	curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 60L);
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 60L);
 
-	res = curl_easy_perform(curl_handle);
+	res = curl_easy_perform(curl);
 	if(res != CURLE_OK) {
 		log_printf(LOG_ERROR, "libcurl: There was an error performing request:\n");
 		log_printf(LOG_ERROR, "libcurl: Error code %d\n", res);
@@ -48,7 +51,7 @@ static int curl_get(const char *url, char **buf) {
 		} else {
 			log_printf(LOG_ERROR, "%s\n", curl_easy_strerror(res));
 		}
-		curl_easy_cleanup(curl_handle);
+		curl_easy_cleanup(curl);
 		*buf = NULL;
 		if (response.ptrs.write_ptr != NULL) {
 			free(response.ptrs.write_ptr);
@@ -61,7 +64,7 @@ static int curl_get(const char *url, char **buf) {
 		*buf = response.ptrs.write_ptr;
 	}
 
-	curl_easy_cleanup(curl_handle);
+	curl_easy_cleanup(curl);
 	return 0;
 }
 
@@ -96,6 +99,9 @@ static int curl_put(const char *url, const char *buf) {
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 	curl_easy_setopt(curl, CURLOPT_USERNAME, token);
+	curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 128L);
+	curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 60L);
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 60L);
 
 	res = curl_easy_perform(curl);
 	curl_slist_free_all(headers);
