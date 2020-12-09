@@ -100,9 +100,9 @@ static void upload_file(const char *name, off_t size, const char *path, char **j
 		curl_easy_setopt(curl, CURLOPT_USERNAME, builder_config.api_token);
 		curl_easy_setopt(curl, CURLOPT_URL, builder_config.file_store_url);
 		curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
-		curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 128L);
-		curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 60L);
-		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 60L);
+		curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 600L);
+		curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 10L);
+		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 180L);
 
 		CURLcode res = curl_easy_perform(curl);
 		long code;
