@@ -7,13 +7,15 @@ errorCatch() {
 prepare_and_run() {
     . /etc/profile
     printf '%s\n' 'clone builder-c git project.'
+    # register
+    pvs-studio-analyzer credentials PVS-Studio Free FREE-FREE-FREE-FREE
 #    cd
 #    git clone https://github.com/DuratarskeyK/builder-c.git
     cd /root/builder-c/
     [ $? != '0' ] && errorCatch
     how-to-use-pvs-studio-free -c 2 -m .
     [ $? != '0' ] && errorCatch
-    pvs-studio-analyzer trace -- bash build.sh
+    pvs-studio-analyzer trace -- make
     [ $? != '0' ] && errorCatch
     pvs-studio-analyzer analyze -o /tmp/project.log -j 2 -C /usr/bin/clang
     [ $? != '0' ] && errorCatch
