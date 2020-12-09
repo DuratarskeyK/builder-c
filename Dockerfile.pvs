@@ -1,7 +1,5 @@
 FROM openmandriva/cooker
 
-ENV PVS_VERSION 7.07.38234.46
-
 RUN dnf --nogpgcheck --refresh --assumeyes --nodocs --setopt=install_weak_deps=False upgrade \
  && dnf --nogpgcheck --assumeyes --setopt=install_weak_deps=False --nodocs install git clang \
          curl make cmake curl-devel libconfig-devel glibc-static-devel lib64stdc++-static-devel strace \
