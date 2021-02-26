@@ -9,11 +9,22 @@ static struct addrinfo hints, *infoptr;
 int check_dns() {
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE; 
-	int result = getaddrinfo("github.com", NULL, &hints, &infoptr);
-	if (result) {
-		log_printf(LOG_FATAL, "getaddrinfo: %s\n", gai_strerror(result));
-		return -1;
+	hints.ai_flags = AI_PASSIVE;
+	for (int try = 0; try < DNS_RETRIES; try++) {
+	    log_printf(LOG_INFO, "Try #%d: Resolving DNS.\n", try + 1);
+	
+	    int result = getaddrinfo("github.com", NULL, &hints, &infoptr);
+	    if (result) {
+		    log_printf(LOG_INFO, "getaddrinfo: %s\n", gai_strerror(result));
+		    if ( try < DNS_RETRIES ) {
+			log_printf(LOG_ERROR, "Sleeping for 5 seconds.\n");
+			sleep(5);
+		    } else {
+			    return -1;
+			}
+	    } else {
+		    try = DNS_RETRIES;
+		}
 	}
 
 	log_printf(LOG_DEBUG, "github.com was resolved to:\n");
