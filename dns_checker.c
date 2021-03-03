@@ -15,11 +15,11 @@ int check_dns() {
 	
 	    int result = getaddrinfo("github.com", NULL, &hints, &infoptr);
 	    if (result) {
-		    log_printf(LOG_INFO, "getaddrinfo: %s\n", gai_strerror(result));
 		    if ( try < DNS_RETRIES ) {
-			log_printf(LOG_ERROR, "Sleeping for 5 seconds.\n");
+			log_printf(LOG_INFO, "getaddrinfo: %s\n Retrying DNS after 5 seconds.\n", gai_strerror(result));
 			sleep(5);
 		    } else {
+			    log_printf(LOG_ERROR, "getaddrinfo: %s\n", gai_strerror(result));
 			    return -1;
 			}
 	    } else {
