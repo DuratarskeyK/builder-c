@@ -12,7 +12,7 @@ int check_dns() {
 	hints.ai_flags = AI_PASSIVE;
 	for (int try = 0; try < DNS_RETRIES; try++) {
 	    log_printf(LOG_INFO, "Try #%d: Resolving DNS.\n", try + 1);
-	
+
 	    int result = getaddrinfo("github.com", NULL, &hints, &infoptr);
 	    if (result) {
 		    if ( try < DNS_RETRIES ) {
