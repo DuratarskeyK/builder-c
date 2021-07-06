@@ -61,17 +61,25 @@ void set_busy_status(int s, const char *build_id) {
 
 int start_statistics_thread(const char *query_string) {
 	char builder_id[33];
+	char random_data[16];
+
 	int res;
 
-	time_t seed = time(NULL);
-	if (seed == -1) {
-		seed = 1;
+	FILE *urandom = fopen("/dev/urandom", "r");
+	if (urandom == NULL) {
+		log_printf(LOG_FATAL, "Can't open /dev/urandom for read: %s\n", strerror(errno));
+		return -1;
 	}
-	seed *= getpid();
-	srand(seed);
+	size_t read_bytes = fread(random_data, 1, 16, urandom);
+	if (read_bytes < 16) {
+		log_printf(LOG_FATAL, "Couldn't read 16 bytes from /dev/urandom\n");
+		fclose(urandom);
+		return -1;
+	}
+	fclose(urandom);
 
 	for(int i = 0; i<16; i++) {
-		int rnd = rand() % 0xFF;
+		int rnd = random_data[i];
 		builder_id[2 * i] = char2hex(rnd & 0x0F);
 		builder_id[2 * i + 1] = char2hex((rnd >> 4) & 0x0F);
 	}
