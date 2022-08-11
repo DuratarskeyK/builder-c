@@ -12,7 +12,7 @@
 #define STACK_SIZE 131072
 
 static char *argv[] = {
-	"bash",
+	"sh",
 	"-lc",
 	"--",
 	NULL,
@@ -30,7 +30,7 @@ static int exec_init(void *arg) {
 		printf("setuid failed\n");
 		return 255;
 	}
-	execvpe("/bin/bash", argv, data->env);
+	execvpe("/bin/sh", argv, data->env);
 
 	return 255;
 }
