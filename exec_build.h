@@ -5,7 +5,8 @@
 #include "log_levels.h"
 
 static const char cmd_fmt[] = "%s 1>&%d 2>&%d";
-static const char update_scripts_cmd[] = "cd %s/%s; git pull origin %s";
+// force-pull even after force-push
+static const char update_scripts_cmd[] = "set -e; cd %s/%s; git fetch origin %s; git reset --hard origin/%s";
 
 typedef struct {
 	char * const *env;
