@@ -3,6 +3,7 @@
 
 #include "log_levels.h"
 #include "structs.h"
+static const char builder_id_env[] = "BUILDER_ID";
 
 static const char api_url_path[] = "application.abf.api_url";
 static const char file_store_url_path[] = "application.abf.file_store_url";
@@ -26,7 +27,9 @@ static const char log_level_env[] = "LOG_LEVEL";
 static const char default_log_level[] = "INFO";
 
 static const char work_dir_path[] = "application.builder.work_dir";
+static const char work_dir_env[] = "BUILD_WORKDIR";
 static const char default_work_dir[] = "/home/omv";
+
 static const char git_scripts_dir_path[] = "application.builder.git_scripts";
 static const char default_git_scripts_dir[] = "/etc/builder-c";
 

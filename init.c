@@ -224,7 +224,10 @@ static int init_strings(config_t *config) {
 		(const char **)&work_dir
 	);
 	if (!work_dir_exists) {
-		builder_config.work_dir = xstrdup(default_work_dir);
+		builder_config.work_dir = getenv(work_dir_env);
+		if (builder_config.work_dir == NULL) {
+			builder_config.work_dir = xstrdup(default_work_dir);
+		}
 	} else {
 		if (work_dir[strlen(work_dir) - 1] == '/') {
 			work_dir[strlen(work_dir) - 1] = '\0';
@@ -272,7 +275,10 @@ static int init_strings(config_t *config) {
 	if(gethostname(hostname, 128) < 0) {
 		hostname[127] = '\0';
 	}
-	builder_config.strings.hostname = xstrdup(hostname);
+	builder_config.strings.hostname = getenv(builder_id_env);
+	if (builder_config.work_dir == NULL) {
+		builder_config.strings.hostname = xstrdup(hostname);
+	}
 	log_printf(LOG_DEBUG, "hostname is %s\n", builder_config.strings.hostname);
 
 	builder_config.strings.move_output_cmd = alloc_sprintf(move_output_cmd_fmt, builder_config.work_dir, builder_config.output_dir);
