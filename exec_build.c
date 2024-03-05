@@ -64,7 +64,7 @@ child_t *exec_build(const char *distrib_type, char * const *env) {
 
 	if (platform->is_git) {
 		log_printf(LOG_INFO, "Updating build scripts.\n");
-		char *update_cmd = alloc_sprintf(update_scripts_cmd, builder_config.git_scripts_dir, platform->type, platform->branch);
+		char *update_cmd = alloc_sprintf(update_scripts_cmd, builder_config.git_scripts_dir, platform->type, platform->branch, platform->branch);
 		char *output;
 		int exit_code = system_with_output(update_cmd, &output);
 		if (exit_code < 0) {
