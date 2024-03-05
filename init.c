@@ -276,7 +276,7 @@ static int init_strings(config_t *config) {
 		hostname[127] = '\0';
 	}
 	builder_config.strings.hostname = getenv(builder_id_env);
-	if (builder_config.work_dir == NULL) {
+	if (builder_config.strings.hostname == NULL) {
 		builder_config.strings.hostname = xstrdup(hostname);
 	}
 	log_printf(LOG_DEBUG, "hostname is %s\n", builder_config.strings.hostname);
